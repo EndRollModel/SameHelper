@@ -142,7 +142,7 @@ Line._replyMsg = function (events, body) {
  * userData.displayName
  * @private
  */
-Line._getUserInfo = (events) => {
+Line.getUserInfo = (events) => {
     const userId = events.source.userId
     const response = UrlFetchApp.fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
         "method": "GET",
@@ -162,7 +162,7 @@ Line._getUserInfo = (events) => {
  * groupData.pictureUrl
  * @private
  */
-Line._getGroupInfo = (events) => {
+Line.getGroupInfo = (events) => {
     const groupId = events.source.groupId;
     const response = UrlFetchApp.fetch(`https://api.line.me/v2/bot/group/${groupId}/summary`, {
         "method": "GET",
