@@ -21,7 +21,7 @@ Storage._getUserToken = () => {
         iat: Math.round(now / 1000),
         exp: Math.round(expires.getTime() / 1000),
         uid: 'SameDesu',
-        // claims:{}
+        // claims:{} // 這裡可以自訂安全規則或是custom keys
     };
 
     let toSign = Utilities.base64Encode(JSON.stringify(header)) + '.' + Utilities.base64Encode(JSON.stringify(payload));
@@ -30,7 +30,7 @@ Storage._getUserToken = () => {
     const signatureBytes = Utilities.computeRsaSha256Signature(toSign, key);
     const signature = Utilities.base64Encode(signatureBytes);
     const jwtToken = toSign + '.' + signature;
-    Logger.log(jwtToken)
+    // Logger.log(jwtToken)
     //取得使用者的token
     const baseUrl = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${Config.projectApiKey}`
     const requestBody = {
