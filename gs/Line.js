@@ -1,6 +1,5 @@
-// module
+// controller
 const Line = {};
-
 
 Line.handle = (event) => {
     // events, message
@@ -11,10 +10,16 @@ Line.handle = (event) => {
         case 'postback': // postback
             break;
         case 'join': // 把機器人加入群組
+            Line._joinHandle(event);
+            break;
+        case 'leave': // 機器人離開群組
+            Line._leaveHandle(event);
             break;
         case 'follow': // 追蹤機器人(加入好友)
+            Line._followHandle(event);
             break;
         case 'unfollow': // 封鎖機器人(封鎖好友)
+            Line._unfollowHandle(event);
             break;
         default:
             break
@@ -22,9 +27,29 @@ Line.handle = (event) => {
 }
 
 /***************
- *   Action    *
+ * OtherAction *
  ***************/
 // 條件過濾
+
+Line._joinHandle = (event) => {
+    // 加入時紀錄
+    const groupInfo = Line.getGroupInfo(event);
+    Sheet.writeRecord(event.type,{id: event.source.groupId, name : groupInfo.groupName})
+}
+Line._leaveHandle = (event) => {
+    // 離開時紀錄
+    Sheet.writeRecord(event.type, {id: event.source.groupId})
+}
+Line._followHandle = (event) => {
+    // 加入好友時紀錄
+    const userInfo = Line.getUserInfo(event);
+    Sheet.writeDebugLog(JSON.stringify(userInfo), '?')
+    Sheet.writeRecord(event.type, {id: event.source.userId, name: userInfo.displayName})
+}
+Line._unfollowHandle = (event) => {
+    // 封鎖時紀錄
+    Sheet.writeRecord(event.type, {id: event.source.userId})
+}
 
 
 /***************
@@ -32,26 +57,27 @@ Line.handle = (event) => {
  ***************/
 Line._messageHandle = (event) => {
     switch (event.message.type) {
-        case 'text':
+        case 'text': // 文字
             Line._textMessageHandle(event);
             break;
-        case 'image':
+        case 'image': // 圖片
             Line._imageMessageHandle(event);
             break;
-        case 'video':
+        case 'video': // 影片
             break;
-        case 'location':
+        case 'location': // 地理位置座標
             break;
-        case 'sticker':
+        case 'sticker': // 貼圖
             break;
-
     }
 }
 
 Line._textMessageHandle = (event) => {
+    // 直接判斷邏輯了
 }
 
 Line._imageMessageHandle = (event) => {
+    // 傳送圖片若是符合上傳條件才上傳 所以先搜尋上傳條件temp表 並且要搜尋groupId
     const msgId = event.message.id;
     const imageFile = Line._getImageContent(msgId);
     const uploadUrl = Storage.uploadImage('Test', imageFile);
@@ -140,7 +166,6 @@ Line._replyMsg = function (events, body) {
  * @return {Object} userData
  * userData.pictureUrl
  * userData.displayName
- * @private
  */
 Line.getUserInfo = (events) => {
     const userId = events.source.userId
@@ -160,7 +185,6 @@ Line.getUserInfo = (events) => {
  * @returns {Object} groupData
  * groupData.groupName
  * groupData.pictureUrl
- * @private
  */
 Line.getGroupInfo = (events) => {
     const groupId = events.source.groupId;
