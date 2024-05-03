@@ -5,8 +5,10 @@ Command._commandDely = 30 * 1000;
 
 // 常用符號作為指令
 Command._symbolCommand = [
-    '!', '#', '/', '?'
+    '!', '！', '#', '＃', '/', '／',
 ]
+// 分隔符號
+Command._spiltSymbol = ','
 
 // 標準指令
 Command._systemCommand = [
@@ -16,81 +18,90 @@ Command._systemCommand = [
     'help', '幫助', '?', // 說明
     '上傳', 'upload', // 上傳圖片
     '抽', // 抽選<tag>
-    '紀錄', 'record',
+    '紀錄', 'record', //
+    '筆記', 'memo', '備忘', //備忘
     '指令',
 ]
 
 Command._actionList = [
-    {type: 'help', keyword: ['?', 'help', '幫助']},
+    {type: 'help', keyword: ['help', '幫助', '?']},
     {type: 'add', keyword: ['add', '增加', '新增']},
     {type: 'edit', keyword: ['edit', '編輯', '修改']},
     {type: 'del', keyword: ['del', '刪除']},
     {type: 'upload', keyword: ['upload', '上傳']},
-    {type: 'random', keyword: ['抽']}
+    {type: 'random', keyword: ['抽']},
+    {type: 'memo', keyword: ['備忘', 'memo',]},
+    {type: 'record', keyword: ['record', '記憶']},
 ]
 
+// 對照用的return type
 Command.commandTypeList = {
-    help: 'help',
-    add: 'add',
-    edit: 'edit',
-    del: 'del',
-    upload: 'upload',
-    random: 'random',
-    custom: 'custom',
-    nope: 'nope',
+    HELP: 'help',
+    ADD: 'add',
+    EDIT: 'edit',
+    DEL: 'del',
+    UPLOAD: 'upload',
+    RANDOM: 'random',
+    CUSTOM: 'custom',
+    NOPE: 'nope',
+    MEMO: 'memo',
+    RECORD: 'record',
 }
 
 // 確認指令需求
 Command._commandTypeCheck = (text) => {
-    const isSymCommand = Command._symbolCommand.some((e) => e === text[0]); // 取得第一位判定
-    const isSysCommand = Command._systemCommand.some((e) => e === text.substring(1)) // 去掉第一位 必須完全符合
+    const firstCommand = text.split(Command._spiltSymbol)[0];
+    const isSymCommand = Command._symbolCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
+    const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1)) // 去掉第一位 必須完全符合
     if (isSymCommand && isSysCommand) {
-        const commandText = text.substring(1);
+        const commandText = firstCommand.substring(1);
         const commandType = Command._actionList.find((e) => e.keyword.includes(commandText))
         return commandType.type
     } else {
         if (isSymCommand && !isSysCommand) {
             // 通常就是自訂類的
-            return Command.commandTypeList.custom;
+            return Command.commandTypeList.CUSTOM;
         } else {
-            // 完全沒有不符合內容 回傳
-            return Command.commandTypeList.nope;
+            // 完全沒有符合內容 回傳
+            return Command.commandTypeList.NOPE;
         }
     }
 }
 
+
+/**
+ * 新增刪除修改
+ * @param text
+ */
 // 文字指令的需求
 Command.textHandle = (text) => {
-    const type = Command._commandTypeCheck();
+    const type = Command._commandTypeCheck(text);
     const action = {};
     action.type = type; // 種類
     action.command = ''; // 指令
     action.tag = ''; // 標籤
-    action.type = ''; // 種類
     action.msg = ''; // 如果需要回傳訊息
     switch (type) {
-        case Command.commandTypeList.help:
-            action.msg = `說明：\n`;
+        case Command.commandTypeList.HELP:
             break;
-        case Command.commandTypeList.add:
+        case Command.commandTypeList.ADD:
             break;
-        case Command.commandTypeList.edit:
+        case Command.commandTypeList.EDIT:
             break;
-        case Command.commandTypeList.del:
+        case Command.commandTypeList.DEL:
             break;
-        case Command.commandTypeList.upload:
+        case Command.commandTypeList.UPLOAD:
             break;
-        case Command.commandTypeList.random:
+        case Command.commandTypeList.RANDOM:
             break;
-        case Command.commandTypeList.custom:
+        case Command.commandTypeList.CUSTOM:
             break;
-        case Command.commandTypeList.nope:
+        case Command.commandTypeList.NOPE:
             break;
     }
-
+    return action;
     // return (action, command, tag)
 }
-
 
 function testCommand() {
     Command._commandTypeCheck('增加')

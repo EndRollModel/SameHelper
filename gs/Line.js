@@ -32,12 +32,13 @@ Line.handle = (event) => {
 // 條件過濾
 
 Line._joinHandle = (event) => {
-    // 加入時紀錄
+    // 加入群組時時紀錄
     const groupInfo = Line.getGroupInfo(event);
-    Sheet.writeRecord(event.type,{id: event.source.groupId, name : groupInfo.groupName})
+    Sheet.writeRecord(event.type, {id: event.source.groupId, name: groupInfo.groupName});
+    Line._replyMsg(event, Line._textStyleBody())
 }
 Line._leaveHandle = (event) => {
-    // 離開時紀錄
+    // 離開群組時紀錄
     Sheet.writeRecord(event.type, {id: event.source.groupId})
 }
 Line._followHandle = (event) => {
@@ -45,9 +46,10 @@ Line._followHandle = (event) => {
     const userInfo = Line.getUserInfo(event);
     Sheet.writeDebugLog(JSON.stringify(userInfo), '?')
     Sheet.writeRecord(event.type, {id: event.source.userId, name: userInfo.displayName})
+    Line._replyMsg(event, Line._textStyleBody())
 }
 Line._unfollowHandle = (event) => {
-    // 封鎖時紀錄
+    // 被封鎖時紀錄
     Sheet.writeRecord(event.type, {id: event.source.userId})
 }
 
@@ -74,6 +76,30 @@ Line._messageHandle = (event) => {
 
 Line._textMessageHandle = (event) => {
     // 直接判斷邏輯了
+    const msgInfo = Command.textHandle(event.message.text);
+    switch (msgInfo.type){
+        case Command.commandTypeList.HELP:
+            break;
+        case Command.commandTypeList.ADD:
+            break;
+        case Command.commandTypeList.MEMO:
+            break;
+        case Command.commandTypeList.EDIT:
+            break;
+        case Command.commandTypeList.DEL:
+            break;
+        case Command.commandTypeList.UPLOAD:
+            break;
+        case Command.commandTypeList.RANDOM:
+            break;
+        case Command.commandTypeList.CUSTOM:
+            break;
+        case Command.commandTypeList.RECORD:
+            break;
+        case Command.commandTypeList.NOPE:
+            return;
+    }
+    return Line._replyMsg(event, Line._textStyleBody(`傳入的指令為:${msgInfo.type}`))
 }
 
 Line._imageMessageHandle = (event) => {
@@ -81,25 +107,17 @@ Line._imageMessageHandle = (event) => {
     const msgId = event.message.id;
     const imageFile = Line._getImageContent(msgId);
     const uploadUrl = Storage.uploadImage('Test', imageFile);
-    // Line._replyMsg(event, [{
-    //     type: 'text',
-    //     text: `成功上傳圖片 url:${uploadUrl}`
-    // }, {
-    //     type: 'image',
-    //     originalContentUrl: `${uploadUrl}`,
-    //     previewImageUrl: `${uploadUrl}`
-    // }])
 }
 
 
 /****************
- * Flex/MsgType *
+ *    MsgType   *
  ****************/
 
 /**
  * 文字訊息
  */
-Line._textStyle = (text) => {
+Line._textStyleBody = (text) => {
     return {
         type: 'text',
         text: text,
@@ -109,7 +127,7 @@ Line._textStyle = (text) => {
 /**
  * 圖片訊息
  */
-Line._imageStyle = (imageUrl) => {
+Line._imageStyleBody = (imageUrl) => {
     return {
         type: 'image',
         originalContentUrl: `${imageUrl}`,
@@ -137,7 +155,7 @@ Line._getImageContent = (msgId) => {
 /**
  * 回傳訊息
  * @param events
- * @param body
+ * @param {Object} body
  * @private
  */
 Line._replyMsg = function (events, body) {
