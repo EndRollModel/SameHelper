@@ -81,14 +81,13 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.HELP:
             break;
         case Command.commandTypeList.ADD:
-            break;
         case Command.commandTypeList.MEMO:
+            break;
+        case Command.commandTypeList.UPLOAD:
             break;
         case Command.commandTypeList.EDIT:
             break;
         case Command.commandTypeList.DEL:
-            break;
-        case Command.commandTypeList.UPLOAD:
             break;
         case Command.commandTypeList.RANDOM:
             break;
