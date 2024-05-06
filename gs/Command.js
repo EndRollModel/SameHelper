@@ -173,7 +173,7 @@ Command.textHandle = (text) => {
                     action.tag = commands[2];
                     break;
                 case commands.length === 1:
-                    action.command = Command.commandTypeList.NOPE;
+                    action.type = Command.commandTypeList.NOPE;
                     action.msg = `若要使用上傳指令:\n格式:#上傳,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
                     break
                 default:
@@ -184,6 +184,20 @@ Command.textHandle = (text) => {
             break;
         }
         case Command.commandTypeList.CUSTOM: {
+            const commands = text.split(commandReg);
+            switch (true) {// 格式 <action>
+                // case commands.length > 1:
+                //     action.type = Command.commandTypeList.NOPE;
+                //     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
+                //     break;
+                case commands.length === 1:
+                    const reg = new RegExp(Command._symbolCommand.join('|'))
+                    action.command = commands[0].replace(reg, '')
+                    break;
+                default :
+                    action.type = Command.commandTypeList.NOPE
+                    break
+            }
             break;
         }
         case Command.commandTypeList.NOPE: {

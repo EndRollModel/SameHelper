@@ -44,7 +44,6 @@ Line._leaveHandle = (event) => {
 Line._followHandle = (event) => {
     // 加入好友時紀錄
     const userInfo = Line.getUserInfo(event);
-    Sheet.writeDebugLog(JSON.stringify(userInfo), '?')
     Sheet.writeRecord(event.type, {id: event.source.userId, name: userInfo.displayName})
     // Line._replyMsg(event, Line._textStyleBody())
 }
@@ -84,12 +83,12 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.MEMO: // 合併但其實不使用
             // 先搜尋是否有該使用者跟該群組id的指令 並且是否一樣有該指令
             const checkRepeat = Sheet.searchCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
-            if (checkRepeat.length > 0) {
+            if (Object.hasOwn(checkRepeat, 'info')) {
                 // 重複了 覆蓋指令
-                Sheet.editCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, checkRepeat[0].index);
+                msgInfo.msg = Sheet.editCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, checkRepeat.index, event.source.userId, event.source.type === 'group'? event.source.groupId : '');
             } else {
                 // 沒有重複 新增指令
-                Sheet.appendCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+                msgInfo.msg = Sheet.appendCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
             }
             break;
         case Command.commandTypeList.UPLOAD: // 上傳圖片
@@ -104,10 +103,9 @@ Line._textMessageHandle = (event) => {
             break;
         case Command.commandTypeList.CUSTOM: // 自訂 呼叫時使用
             const commandList = Sheet.searchCommand(msgInfo.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
-            Sheet.writeDebugLog(`command${msgInfo.command}, userId :${event.source.userId}`);
-            if (commandList.length > 0) {
-                msgInfo.msg = commandList[0].info;
-            } else {
+            if (Object.hasOwn(commandList, 'info')) {
+                msgInfo.msg = commandList.info;
+            }else {
                 msgInfo.msg = `沒有此指令!`
             }
             break;

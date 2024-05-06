@@ -41,7 +41,7 @@ Sheet.COMMAND_TYPE = {
 }
 
 /**************
- *            *
+ *   handler  *
  **************/
 Sheet.writeRecord = (type, info) => {
     // join, leave, follow, unfollow
@@ -74,66 +74,6 @@ Sheet.writeTempData = (userId, groupId = '') => {
     Sheet.commandSpreadSheet.getSheets()[tabIndex]
 }
 
-
-/**
- * 搜尋是否已經有該指令
- * @param command 指令名稱
- * @param type 指令的類型(text, image)
- * @param userId 使用者id
- * @param groupId 群組id
- */
-Sheet.searchCommand = (command, type = '', userId, groupId) => {
-    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
-    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
-    const newData = allData.map((target, index) => ({target, index}));
-    const titleList = newData[0].target;
-    const filter = newData.filter((elem) => {
-        const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND);
-        const typeIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TYPE);
-        const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
-        const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
-        if (type === '' || type === null) {
-            return (elem.target[commandIndex] === command &&
-                elem.target[userIndex] === userId &&
-                elem.target[groupIndex] === groupId)
-        } else {
-            return (elem.target[commandIndex] === command &&
-                elem.target[userIndex] === userId &&
-                elem.target[typeIndex] === userId &&
-                elem.target[groupIndex] === groupId)
-        }
-    });
-    if (filter.length > 0) {
-        const returnData = {}
-        filter[0].target.forEach((e, i)=>{
-            returnData[titleList[i]] = e
-        })
-        returnData.index = filter[0].index;
-        // return filter;
-        return returnData;
-    } else {
-        return {}
-    }
-}
-
-/**
- * 新增新的指令
- * @param command 指令名稱
- * @param type 類別(text, image)
- * @param tag 如果有tag
- * @param info 指令的內容
- * @param userId 使用者id
- * @param groupId 群組id
- */
-Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
-    // ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']
-    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
-    tabPage.appendRow([command, type, tag, info, userId, groupId, '', true.toString()]);
-}
-
-Sheet.editCommand = (command, type, tag, info, index) => {
-
-}
 
 /**
  * 搜尋表中key的值
@@ -177,10 +117,86 @@ Sheet._eventRecord = (tabName, action, key, value, name = '') => {
 }
 
 /***************
+ *   command   *
+ **************/
+
+/**
+ * 搜尋是否已經有該指令
+ * @param command 指令名稱
+ * @param type 指令的類型(text, image)
+ * @param userId 使用者id
+ * @param groupId 群組id
+ */
+Sheet.searchCommand = (command, type = '', userId, groupId) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
+    const newData = allData.map((target, index) => ({target, index}));
+    const titleList = newData[0].target;
+    const filter = newData.filter((elem) => {
+        const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND);
+        const typeIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TYPE);
+        const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
+        const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        if (type === '' || type === null) {
+            return (elem.target[commandIndex] === command &&
+                elem.target[userIndex] === userId &&
+                elem.target[groupIndex] === groupId)
+        } else {
+            return (elem.target[commandIndex] === command &&
+                elem.target[userIndex] === userId &&
+                elem.target[typeIndex] === type &&
+                elem.target[groupIndex] === groupId)
+        }
+    });
+    if (filter.length > 0) {
+        const returnData = {}
+        filter[0].target.forEach((e, i)=>{
+            returnData[titleList[i]] = e
+        })
+        returnData.index = filter[0].index;
+        return returnData;
+    } else {
+        return {}
+    }
+}
+
+/**
+ * 新增新的指令
+ * @param command 指令名稱
+ * @param type 類別(text, image)
+ * @param tag 如果有tag
+ * @param info 指令的內容
+ * @param userId 使用者id
+ * @param groupId 群組id
+ */
+Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
+    // ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    tabPage.appendRow([command, type, tag, info, userId, groupId, '', true.toString()]);
+    return `新增指令: ${command} 完成`
+}
+
+/**
+ * 修改指令
+ * @param command
+ * @param type
+ * @param tag
+ * @param info
+ * @param index
+ * @param userId
+ * @param groupId
+ * @return {`修改指令: ${string} 完成`}
+ */
+Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    tabPage.getRange(index+1, 1, 1, tabPage.getLastColumn()).setValues([[command, type, tag, info, userId, groupId, '' , true.toString()]])
+    return `修改指令: ${command} 完成`;
+}
+
+
+/***************
  *  debug相關  *
  ***************/
-
-
 function checkDebugSheet() {
     const nowList = Sheet.debugSpreadSheet.getSheet().map((e, i) => ({name: e.name, index: i}));
     Sheet.debugSpreadSheet.getSheet().for((e) => {
