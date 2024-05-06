@@ -3,12 +3,12 @@ const Sheet = {}
 // module
 // 錯誤的內容就寫入到debug的列表
 // getRange(row, column, numRows, numColumns)
-Sheet.debugSpeadSheet = SpreadsheetApp.openById(Config.debugSheetId);
-Sheet.commandSpeadSheet = SpreadsheetApp.openById(Config.commandSheetId);
+Sheet.debugSpreadSheet = SpreadsheetApp.openById(Config.debugSheetId);
+Sheet.commandSpreadSheet = SpreadsheetApp.openById(Config.commandSheetId);
 
 // 指令表的內容
 Sheet._commandTabList = [
-    {name: 'command', title: ['command', 'type', 'tag', 'userId', 'groupId', 'status']}, //
+    {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
     {name: 'temp', title: ['command', 'date', 'userId', 'groupId', 'status']}, //
     {name: 'record', title: ['keyword', 'date', 'userId', 'groupId']}, //
     {name: 'users', title: ['userId', 'userName', 'status']},
@@ -19,6 +19,7 @@ Sheet._debugTabList = [
 ];
 // 做key值呼叫而已 為了避免直接打字串打錯
 Sheet.Dictionary = {
+    COMMAND: 'command',
     FOLLOW: 'follow',
     UNFOLLOW: 'unfollow',
     JOIN: 'join',
@@ -27,7 +28,16 @@ Sheet.Dictionary = {
     GROUPS: 'groups',
     USERID: 'userId',
     GROUPID: 'groupId',
+    HISTORY: 'history',
+    STATUS: 'status',
     TEMP: 'temp',
+    TYPE: 'type',
+    INFO: 'info',
+}
+
+Sheet.COMMAND_TYPE = {
+    TEXT: 'text',
+    IMAGE: 'image',
 }
 
 /**************
@@ -38,32 +48,92 @@ Sheet.writeRecord = (type, info) => {
     // info {id, name}
     switch (type) {
         case 'join':
-            Sheet._recordInfo(Sheet.Dictionary.GROUPS, type, Sheet.Dictionary.GROUPID, info.id, info.name)
+            Sheet._eventRecord(Sheet.Dictionary.GROUPS, type, Sheet.Dictionary.GROUPID, info.id, info.name)
             break;
         case 'leave':
-            Sheet._recordInfo(Sheet.Dictionary.GROUPS, type, Sheet.Dictionary.GROUPID, info.id)
+            Sheet._eventRecord(Sheet.Dictionary.GROUPS, type, Sheet.Dictionary.GROUPID, info.id)
             break;
         case 'follow':
-            Sheet._recordInfo(Sheet.Dictionary.USERS, type, Sheet.Dictionary.USERID, info.id, info.name)
+            Sheet._eventRecord(Sheet.Dictionary.USERS, type, Sheet.Dictionary.USERID, info.id, info.name)
             break;
         case 'unfollow':
-            Sheet._recordInfo(Sheet.Dictionary.USERS, type, Sheet.Dictionary.USERID, info.id)
+            Sheet._eventRecord(Sheet.Dictionary.USERS, type, Sheet.Dictionary.USERID, info.id)
             break;
     }
 }
 ////
 
 Sheet.searchTempValue = (userId, groupId) => {
-    const tabIndex = Sheet.getALLSheetName(Sheet.commandSpeadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
-    const tabPage = Sheet.commandSpeadSheet.getSheets()[tabIndex]; // 先找到sheet
+    const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
+    const tabPage = Sheet.commandSpreadSheet.getSheets()[tabIndex]; // 先找到sheet
 }
 
 
 Sheet.writeTempData = (userId, groupId = '') => {
-    const tabIndex = Sheet.getALLSheetName(Sheet.commandSpeadSheet).findIndex((e)=> e === Sheet.Dictionary.TEMP);
-    Sheet.commandSpeadSheet.getSheets()[tabIndex]
+    const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
+    Sheet.commandSpreadSheet.getSheets()[tabIndex]
 }
 
+
+/**
+ * 搜尋是否已經有該指令
+ * @param command 指令名稱
+ * @param type 指令的類型(text, image)
+ * @param userId 使用者id
+ * @param groupId 群組id
+ */
+Sheet.searchCommand = (command, type = '', userId, groupId) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
+    const newData = allData.map((target, index) => ({target, index}));
+    const titleList = newData[0].target;
+    const filter = newData.filter((elem) => {
+        const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND);
+        const typeIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TYPE);
+        const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
+        const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        if (type === '' || type === null) {
+            return (elem.target[commandIndex] === command &&
+                elem.target[userIndex] === userId &&
+                elem.target[groupIndex] === groupId)
+        } else {
+            return (elem.target[commandIndex] === command &&
+                elem.target[userIndex] === userId &&
+                elem.target[typeIndex] === userId &&
+                elem.target[groupIndex] === groupId)
+        }
+    });
+    if (filter.length > 0) {
+        const returnData = {}
+        filter[0].target.forEach((e, i)=>{
+            returnData[titleList[i]] = e
+        })
+        returnData.index = filter[0].index;
+        // return filter;
+        return returnData;
+    } else {
+        return {}
+    }
+}
+
+/**
+ * 新增新的指令
+ * @param command 指令名稱
+ * @param type 類別(text, image)
+ * @param tag 如果有tag
+ * @param info 指令的內容
+ * @param userId 使用者id
+ * @param groupId 群組id
+ */
+Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
+    // ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    tabPage.appendRow([command, type, tag, info, userId, groupId, '', true.toString()]);
+}
+
+Sheet.editCommand = (command, type, tag, info, index) => {
+
+}
 
 /**
  * 搜尋表中key的值
@@ -75,14 +145,16 @@ Sheet.writeTempData = (userId, groupId = '') => {
  * @private
  * @description *注意* 此方法必須輸入正確的key, 否則會錯誤
  */
-Sheet._recordInfo = (tabName, action, key, value, name = '') => {
+Sheet._eventRecord = (tabName, action, key, value, name = '') => {
     // const tabIndex = Sheet.getALLSheetName(Sheet.commandSpeadSheet).findIndex((e) => e === tabName);
-    const tabPage = Sheet.getSheetTab(Sheet.commandSpeadSheet, tabName);
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, tabName);
     const searchValue = Sheet._searchKeyValues(tabPage, key)
     if (searchValue.includes(value)) {
         // 若有就先檢查狀態 然後更換狀態
         const rowIndex = searchValue.findIndex((e) => e === value) + 2;
-        const statusIndex = titleList.findIndex((e) => e === 'status') + 1;
+        // const statusIndex = titleList.findIndex((e) => e === 'status') + 1;
+        const tabIndex = Sheet._commandTabList.findIndex((tab) => tab.name === tabName);
+        const statusIndex = Sheet._commandTabList[tabIndex].title.findIndex((e) => e === Sheet.Dictionary.STATUS) + 1
         switch (tabName) {
             case 'users':
                 tabPage.getRange(rowIndex, statusIndex, 1, 1).setValue(action === Sheet.Dictionary.FOLLOW ? Sheet.Dictionary.FOLLOW : Sheet.Dictionary.UNFOLLOW);
@@ -110,8 +182,8 @@ Sheet._recordInfo = (tabName, action, key, value, name = '') => {
 
 
 function checkDebugSheet() {
-    const nowList = Sheet.debugSpeadSheet.getSheet().map((e, i) => ({name: e.name, index: i}));
-    Sheet.debugSpeadSheet.getSheet().for((e) => {
+    const nowList = Sheet.debugSpreadSheet.getSheet().map((e, i) => ({name: e.name, index: i}));
+    Sheet.debugSpreadSheet.getSheet().for((e) => {
 
     })
 }
@@ -124,11 +196,10 @@ function checkDebugSheet() {
  * @private
  */
 Sheet._searchKeyValues = (tabPage, key) => {
-    const titleList = tabPage.getRange(1, 1, 1, tabPage.getLastColumn()).getDisplayValues()[0];
-    const titleListIndex = titleList.findex((e) => e === key);
-    return tabPage.getRange(2, titleListIndex + 1, tabPage.getLastRow(), 1).getDisplayValues().flat();
+    const titleList = tabPage.getRange(1, 1, 1, tabPage.getLastColumn()).getDisplayValues()[0]; // 取得標題
+    const titleListIndex = titleList.findIndex((e) => e === key) + 1;
+    return tabPage.getRange(2, titleListIndex, (tabPage.getLastRow() - 1 === 0) ? 1 : tabPage.getLastRow(), 1).getDisplayValues().flat();
 }
-
 
 /**
  * 取得所有表的名稱
@@ -144,7 +215,7 @@ Sheet.getALLSheetName = function (sheet) {
  * @param sheet
  * @returns {*}
  */
-Sheet.getSheetTab = function (sheet, tabName){
+Sheet.getSheetTab = function (sheet, tabName) {
     const nameList = sheet.getSheets().map((e) => e.getName());
     const tabNameIndex = nameList.findIndex((e) => e === tabName)
     return sheet.getSheets()[tabNameIndex]
@@ -158,7 +229,7 @@ Sheet.getSheetTab = function (sheet, tabName){
 Sheet.writeDebugLog = (msg, stack) => {
     const now = new Date();
     const formattedDateTime = Utilities.formatDate(now, "Asia/Taipei", "yyyy-MM-dd HH:mm:ss");
-    Sheet.debugSpeadSheet.appendRow([formattedDateTime, msg, stack])
+    Sheet.debugSpreadSheet.appendRow([formattedDateTime, msg, stack])
 }
 
 /**
@@ -167,19 +238,19 @@ Sheet.writeDebugLog = (msg, stack) => {
  */
 Sheet._checkAllSheetTab = () => {
     Sheet._commandTabList.forEach((tab) => {
-        const commandSheets = Sheet.commandSpeadSheet.getSheets();
+        const commandSheets = Sheet.commandSpreadSheet.getSheets();
         const isExist = commandSheets.some((sheet) => sheet.getName() === tab.name);
         if (!isExist) {
-            const newTab = Sheet.commandSpeadSheet.insertSheet();
+            const newTab = Sheet.commandSpreadSheet.insertSheet();
             newTab.setName(tab.name);
-            const allName = Sheet.getALLSheetName(Sheet.commandSpeadSheet);
+            const allName = Sheet.getALLSheetName(Sheet.commandSpreadSheet);
             const tabIndex = allName.findIndex((name) => name === tab.name);
-            Sheet.commandSpeadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setValues([tab.title]);
-            Sheet.commandSpeadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setHorizontalAlignment("center");
-            Sheet.commandSpeadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setFontWeight("bold");
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setValues([tab.title]);
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setHorizontalAlignment("center");
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setFontWeight("bold");
             // sheet.setColumnWidth(columnIndex, columnWidth);
             if (tab.name === Sheet.Dictionary.USERS || tab.name === Sheet.Dictionary.GROUPS)
-                Sheet.commandSpeadSheet.getSheets()[tabIndex].setColumnWidth(1, 260)
+                Sheet.commandSpreadSheet.getSheets()[tabIndex].setColumnWidth(1, 260)
         }
     })
 }

@@ -19,7 +19,7 @@ Command._systemCommand = [
     '上傳', 'upload', // 上傳圖片
     '抽', // 抽選<tag>
     '紀錄', 'record', //
-    '筆記', 'memo', '備忘', //備忘
+    // '筆記', 'memo', '備忘', //備忘
     '指令',
 ]
 
@@ -110,7 +110,7 @@ Command.textHandle = (text) => {
                     action.msg = `若要新增指令:\n格式:#新增,<指令名稱>,<指令內容>`
                     break
                 default:
-                case commands.length < 3 && commands.length > 1:
+                case commands.length === 2:
                     action.type = Command.commandTypeList.NOPE;
                     action.msg = `指令中缺少必要的內容\n格式:#新增,<指令名稱>,<指令內容>`
                     break;
@@ -119,7 +119,21 @@ Command.textHandle = (text) => {
         }
         case Command.commandTypeList.EDIT: {break;}
         case Command.commandTypeList.DEL: {
-
+            const commands = text.split(commandReg);
+            switch (true){ // 格式 <action> <command>
+                case commands.length > 2:
+                    action.type = Command.commandTypeList.NOPE;
+                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
+                    break;
+                case commands.length === 2:
+                    break;
+                case commands.length === 1:
+                    action.type = Command.commandTypeList.NOPE;
+                    action.msg = `指令中缺少必要的內容\n格式:#刪除,<指令名稱>`
+                    break;
+                default:
+                    break;
+            }
             break;
         }
         case Command.commandTypeList.UPLOAD: {
@@ -148,6 +162,25 @@ Command.textHandle = (text) => {
             break;
         }
         case Command.commandTypeList.RANDOM: {
+            const commands = text.split(commandReg);
+            switch (true) {// 格式 <action>,<tag>
+                case commands.length > 2:
+                    action.type = Command.commandTypeList.NOPE;
+                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
+                    break;
+                case commands.length === 2:
+                    action.command = commands[1]
+                    action.tag = commands[2];
+                    break;
+                case commands.length === 1:
+                    action.command = Command.commandTypeList.NOPE;
+                    action.msg = `若要使用上傳指令:\n格式:#上傳,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
+                    break
+                default:
+                    action.type = Command.commandTypeList.NOPE;
+                    action.msg = `指令中缺少必要的內容\n格式:#上傳,<指令名稱>,<tag(可不填)>`
+                    break;
+            }
             break;
         }
         case Command.commandTypeList.CUSTOM: {

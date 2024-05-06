@@ -7,7 +7,7 @@ Line.handle = (event) => {
         case 'message': // message系列
             Line._messageHandle(event);
             break;
-        case 'postback': // postback
+        case 'postback': // postback 可能用不到 先接著
             break;
         case 'join': // 把機器人加入群組
             Line._joinHandle(event);
@@ -35,7 +35,7 @@ Line._joinHandle = (event) => {
     // 加入群組時時紀錄
     const groupInfo = Line.getGroupInfo(event);
     Sheet.writeRecord(event.type, {id: event.source.groupId, name: groupInfo.groupName});
-    Line._replyMsg(event, Line._textStyleBody())
+    // Line._replyMsg(event, Line._textStyleBody())
 }
 Line._leaveHandle = (event) => {
     // 離開群組時紀錄
@@ -46,7 +46,7 @@ Line._followHandle = (event) => {
     const userInfo = Line.getUserInfo(event);
     Sheet.writeDebugLog(JSON.stringify(userInfo), '?')
     Sheet.writeRecord(event.type, {id: event.source.userId, name: userInfo.displayName})
-    Line._replyMsg(event, Line._textStyleBody())
+    // Line._replyMsg(event, Line._textStyleBody())
 }
 Line._unfollowHandle = (event) => {
     // 被封鎖時紀錄
@@ -77,28 +77,48 @@ Line._messageHandle = (event) => {
 Line._textMessageHandle = (event) => {
     // 直接判斷邏輯了
     const msgInfo = Command.textHandle(event.message.text);
-    switch (msgInfo.type){
-        case Command.commandTypeList.HELP:
+    switch (msgInfo.type) {
+        case Command.commandTypeList.HELP: // 說明
             break;
         case Command.commandTypeList.ADD:
-        case Command.commandTypeList.MEMO:
+        case Command.commandTypeList.MEMO: // 合併但其實不使用
+            // 先搜尋是否有該使用者跟該群組id的指令 並且是否一樣有該指令
+            const checkRepeat = Sheet.searchCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            if (checkRepeat.length > 0) {
+                // 重複了 覆蓋指令
+                Sheet.editCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, checkRepeat[0].index);
+            } else {
+                // 沒有重複 新增指令
+                Sheet.appendCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            }
             break;
-        case Command.commandTypeList.UPLOAD:
+        case Command.commandTypeList.UPLOAD: // 上傳圖片
+            // Sheet.searchTemp(); 查詢是否
+            // const checkRepeat = Sheet.searchCommand(msgInfo.command, Sheet.COMMAND_TYPE.IMAGE, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
             break;
-        case Command.commandTypeList.EDIT:
+        case Command.commandTypeList.EDIT: // 編輯(棄用)
             break;
-        case Command.commandTypeList.DEL:
+        case Command.commandTypeList.DEL: // 刪除
             break;
-        case Command.commandTypeList.RANDOM:
+        case Command.commandTypeList.RANDOM: // 抽
             break;
-        case Command.commandTypeList.CUSTOM:
+        case Command.commandTypeList.CUSTOM: // 自訂 呼叫時使用
+            const commandList = Sheet.searchCommand(msgInfo.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            if (commandList.length > 0) {
+                msgInfo.msg = commandList[0].info;
+            } else {
+                msgInfo.msg = `沒有此指令!`
+            }
             break;
-        case Command.commandTypeList.RECORD:
+        case Command.commandTypeList.RECORD: // 紀錄 目前先不寫功能
             break;
-        case Command.commandTypeList.NOPE:
+        case Command.commandTypeList.NOPE: // 如果msg內有東西 則回傳msg
             return;
     }
-    return Line._replyMsg(event, Line._textStyleBody(`傳入的指令為:${msgInfo.type}`))
+    if(msgInfo.msg !== ''){
+        return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg));
+    }
+    // return Line._replyMsg(event, Line._textStyleBody(`傳入的指令為:${msgInfo.type}`))
 }
 
 Line._imageMessageHandle = (event) => {
