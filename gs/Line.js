@@ -104,6 +104,7 @@ Line._textMessageHandle = (event) => {
             break;
         case Command.commandTypeList.CUSTOM: // 自訂 呼叫時使用
             const commandList = Sheet.searchCommand(msgInfo.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            Sheet.writeDebugLog(`command${msgInfo.command}, userId :${event.source.userId}`);
             if (commandList.length > 0) {
                 msgInfo.msg = commandList[0].info;
             } else {
