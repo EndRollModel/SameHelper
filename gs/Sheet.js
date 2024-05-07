@@ -6,6 +6,9 @@ const Sheet = {}
 Sheet.debugSpreadSheet = SpreadsheetApp.openById(Config.debugSheetId);
 Sheet.commandSpreadSheet = SpreadsheetApp.openById(Config.commandSheetId);
 
+// 寫入指令的時間
+Sheet._tempDelayTime = 30 * 1000;
+
 // 指令表的內容
 Sheet._commandTabList = [
     {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
@@ -116,6 +119,19 @@ Sheet._eventRecord = (tabName, action, key, value, name = '') => {
     }
 }
 
+/**************
+ *    Temp    *
+ *************/
+// 時間超過或是狀態關閉都不予搜尋
+Sheet.searchTemp = (command, date, userId, groupId) => {
+
+}
+
+// 寫入
+Sheet.appendTemp = (command, date, userId, groupId) =>{
+
+}
+
 /***************
  *   command   *
  **************/
@@ -178,13 +194,13 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
 
 /**
  * 修改指令
- * @param command
- * @param type
- * @param tag
- * @param info
- * @param index
- * @param userId
- * @param groupId
+ * @param command 指令名稱
+ * @param type 種類
+ * @param tag tag:如果有的畫
+ * @param info 內容
+ * @param index 第幾個index
+ * @param userId userId
+ * @param groupId groupId
  * @return {`修改指令: ${string} 完成`}
  */
 Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
