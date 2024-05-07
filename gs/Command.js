@@ -52,7 +52,7 @@ Command.commandTypeList = {
 // 確認指令需求
 Command._commandTypeCheck = (text) => {
     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
-    const firstCommand = text.split(commandReg)[0];
+    const firstCommand = text.split(commandReg)[0].trim();
     const isSymCommand = Command._symbolCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
     const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1)) // 去掉第一位 必須完全符合
     if (isSymCommand && isSysCommand) {
@@ -85,11 +85,12 @@ Command.textHandle = (text) => {
     action.info = ''; // 文字的內容
     action.tag = ''; // 標籤
     action.msg = ''; // 如果需要回傳訊息
+    action.msgType = ''; // 訊息種類
     switch (type) {
         case Command.commandTypeList.HELP:
-            action.type = Command.commandTypeList.NOPE;
+            action.type = Command.commandTypeList.HELP;
             // 依據群組或是個人拉取指令內容
-            action.msg = ``
+            action.msg = `目前可使用指令\n#新增, #上傳`
             break;
         case Command.commandTypeList.ADD:
         case Command.commandTypeList.MEMO: {
@@ -102,11 +103,11 @@ Command.textHandle = (text) => {
                     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
                     break;
                 case commands.length === 3: // 新增指令及內容
-                    action.command = commands[1];
-                    action.info = commands[2];
+                    action.command = commands[1].trim();
+                    action.info = commands[2].trim();
                     break;
                 case commands.length === 1:
-                    action.command = Command.commandTypeList.NOPE;
+                    action.type = Command.commandTypeList.NOPE;
                     action.msg = `若要新增指令:\n格式:#新增,<指令名稱>,<指令內容>`
                     break
                 default:
@@ -123,13 +124,14 @@ Command.textHandle = (text) => {
             switch (true){ // 格式 <action> <command>
                 case commands.length > 2:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
+                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
                     break;
                 case commands.length === 2:
+                    action.info = commands[1].trim();
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#刪除,<指令名稱>`
+                    action.msg = `指令中缺少必要的內容\n格式:#刪除,<指令名稱>`;
                     break;
                 default:
                     break;
@@ -144,14 +146,14 @@ Command.textHandle = (text) => {
                     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
                     break;
                 case commands.length === 3:
-                    action.command = commands[1]
-                    action.tag = commands[2];
+                    action.command = commands[1].trim();
+                    action.tag = commands[2].trim();
                     break;
                 case commands.length === 2:
-                    action.command = commands[1];
+                    action.command = commands[1].trim();
                     break;
                 case commands.length === 1:
-                    action.command = Command.commandTypeList.NOPE;
+                    action.type = Command.commandTypeList.NOPE;
                     action.msg = `若要使用上傳指令:\n格式:#上傳,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
                     break
                 default:
@@ -169,16 +171,16 @@ Command.textHandle = (text) => {
                     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
                     break;
                 case commands.length === 2:
-                    action.command = commands[1]
-                    action.tag = commands[2];
+                    action.command = commands[1].trim();
+                    action.tag = commands[2].trim();
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要使用上傳指令:\n格式:#上傳,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
+                    action.msg = `若要使用上傳指令:\n格式:#抽,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
                     break
                 default:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#上傳,<指令名稱>,<tag(可不填)>`
+                    action.msg = `指令中缺少必要的內容\n格式:#抽,<指令名稱>,<tag(可不填)>`
                     break;
             }
             break;
@@ -192,9 +194,9 @@ Command.textHandle = (text) => {
                 //     break;
                 case commands.length === 1:
                     const reg = new RegExp(Command._symbolCommand.join('|'))
-                    action.command = commands[0].replace(reg, '')
+                    action.command = commands[0].replace(reg, '').trim();
                     break;
-                default :
+                default : // 自訂並且大於數量
                     action.type = Command.commandTypeList.NOPE
                     break
             }

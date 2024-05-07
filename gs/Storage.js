@@ -69,7 +69,7 @@ Storage.uploadImage = (fileName, image) => {
         if (!Object.hasOwn(responseData, 'bucket')) {
             return '';
         } else {
-            return `https://firebasestorage.googleapis.com/v0/b/${responseData.bucket}/o/${responseData.name}?alt=media&token=${responseData.downloadTokens}`
+            return `https://firebasestorage.googleapis.com/v0/b/${responseData.bucket}/o/${encodeURIComponent(responseData.name)}?alt=media&token=${responseData.downloadTokens}`
         }
     } catch (e) {
         return JSON.stringify({ type: e.message, data: uploadUserToken, path: `https://firebasestorage.googleapis.com/v0/b/${Config.bucketName}/o/${fileName}` });

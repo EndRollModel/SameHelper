@@ -12,7 +12,7 @@ Sheet._tempDelayTime = 30 * 1000;
 // 指令表的內容
 Sheet._commandTabList = [
     {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
-    {name: 'temp', title: ['command', 'date', 'userId', 'groupId', 'status']}, //
+    {name: 'temp', title: ['command', 'tag', 'date', 'userId', 'groupId', 'status']}, //
     {name: 'record', title: ['keyword', 'date', 'userId', 'groupId']}, //
     {name: 'users', title: ['userId', 'userName', 'status']},
     {name: 'groups', title: ['groupId', 'groupName', 'status']},
@@ -36,6 +36,7 @@ Sheet.Dictionary = {
     TEMP: 'temp',
     TYPE: 'type',
     INFO: 'info',
+    DATE: 'date',
 }
 
 Sheet.COMMAND_TYPE = {
@@ -66,16 +67,16 @@ Sheet.writeRecord = (type, info) => {
 }
 ////
 
-Sheet.searchTempValue = (userId, groupId) => {
-    const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
-    const tabPage = Sheet.commandSpreadSheet.getSheets()[tabIndex]; // 先找到sheet
-}
-
-
-Sheet.writeTempData = (userId, groupId = '') => {
-    const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
-    Sheet.commandSpreadSheet.getSheets()[tabIndex]
-}
+// Sheet.searchTempValue = (userId, groupId) => {
+//     const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
+//     const tabPage = Sheet.commandSpreadSheet.getSheets()[tabIndex]; // 先找到sheet
+// }
+//
+//
+// Sheet.writeTempData = (userId, groupId = '') => {
+//     const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
+//     Sheet.commandSpreadSheet.getSheets()[tabIndex]
+// }
 
 
 /**
@@ -124,12 +125,73 @@ Sheet._eventRecord = (tabName, action, key, value, name = '') => {
  *************/
 // 時間超過或是狀態關閉都不予搜尋
 Sheet.searchTemp = (command, date, userId, groupId) => {
-
+    // 檢查時間
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
+    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
+    const newData = allData.map((target, index) => ({target, index}));
+    const titleList = newData[0].target;
+    const filter = newData.filter((e) => {
+        const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND)
+        const dateIndex = titleList.findIndex((e) => e === Sheet.Dictionary.DATE);
+        const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
+        const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        if (command === '') {
+            // 圖片上傳的時候要檢查這裡 確認上傳者與群組為同一地點 並且時間小於時限
+            return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
+        } else {
+            // 一般檢查用的 一定會有指令
+            if (groupId !== '') {
+                // 如果是群組上傳的 主要檢查群組的內容
+                return e.target[commandIndex] === command &&
+                    parseFloat(e.target[dateIndex]) > date &&
+                    e.target[groupIndex] === groupId
+            } else {
+                // 如果為使用者上傳的 僅檢查上傳者
+                return e.target[commandIndex] === command &&
+                    parseFloat(e.target[dateIndex]) > date &&
+                    e.target[userIndex] === userId
+            }
+        }
+    });
+    if (filter.length > 0) {
+        const returnData = {};
+        filter[0].target.forEach((e, i) => {
+            returnData[titleList[i]] = e
+        })
+        returnData.index = filter[0].index;
+        return returnData;
+    } else {
+        return {};
+    }
 }
 
-// 寫入
-Sheet.appendTemp = (command, date, userId, groupId) =>{
+/**
+ * 寫入暫存
+ * @param command
+ * @param tag
+ * @param date
+ * @param userId
+ * @param groupId
+ * @return {`請於${number}秒內上傳圖片 指令才會建立。`}
+ */
+Sheet.appendTemp = (command, tag, date, userId, groupId) => {
+    // 根據
+    // command tag date userId	groupId	status
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
+    tabPage.appendRow([command, tag, date + Sheet._tempDelayTime, userId, groupId, true.toString()])
+    return `請於${Sheet._tempDelayTime / 1000}秒內上傳圖片 指令才會建立。`
+}
 
+/**
+ * 更替狀態
+ * @param index
+ */
+Sheet.editTempStatus = (index) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
+    const dateNameIndex = Sheet._commandTabList.findIndex((tab) => tab.name === Sheet.Dictionary.TEMP);
+    const tabNameList = Sheet._commandTabList[dateNameIndex].title
+    const dateColIndex = tabNameList.findIndex((e) => e === Sheet.Dictionary.DATE);
+    tabPage.getRange(index + 1, dateColIndex + 1, 1, 1).setValue(-1);
 }
 
 /***************
@@ -154,19 +216,30 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
         if (type === '' || type === null) {
-            return (elem.target[commandIndex] === command &&
-                elem.target[userIndex] === userId &&
-                elem.target[groupIndex] === groupId)
+            // type為空時 為custom指令 僅搜尋來源指令與上傳者
+            if (groupId !== '') {
+                return (elem.target[commandIndex] === command &&
+                    elem.target[groupIndex] === groupId)
+            } else {
+                return (elem.target[commandIndex] === command &&
+                    elem.target[userIndex] === userId)
+            }
         } else {
-            return (elem.target[commandIndex] === command &&
-                elem.target[userIndex] === userId &&
-                elem.target[typeIndex] === type &&
-                elem.target[groupIndex] === groupId)
+            // 新增指令時需要查詢是否有對應的種類內容
+            if (groupId !== '') {
+                return (elem.target[commandIndex] === command &&
+                    elem.target[typeIndex] === type &&
+                    elem.target[groupIndex] === groupId)
+            } else {
+                return (elem.target[commandIndex] === command &&
+                    elem.target[userIndex] === userId &&
+                    elem.target[typeIndex] === type)
+            }
         }
     });
     if (filter.length > 0) {
         const returnData = {}
-        filter[0].target.forEach((e, i)=>{
+        filter[0].target.forEach((e, i) => {
             returnData[titleList[i]] = e
         })
         returnData.index = filter[0].index;
@@ -184,12 +257,17 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
  * @param info 指令的內容
  * @param userId 使用者id
  * @param groupId 群組id
+ * @return {String}
  */
 Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
     // ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
-    tabPage.appendRow([command, type, tag, info, userId, groupId, '', true.toString()]);
-    return `新增指令: ${command} 完成`
+    if (groupId !== '') {
+        tabPage.appendRow([command, type, tag, info, '', groupId, '', true.toString()]);
+    } else {
+        tabPage.appendRow([command, type, tag, info, userId, groupId, '', true.toString()]);
+    }
+    return `新增指令：[${command}] 完成`
 }
 
 /**
@@ -201,12 +279,16 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
  * @param index 第幾個index
  * @param userId userId
  * @param groupId groupId
- * @return {`修改指令: ${string} 完成`}
+ * @return {String}
  */
 Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
-    tabPage.getRange(index+1, 1, 1, tabPage.getLastColumn()).setValues([[command, type, tag, info, userId, groupId, '' , true.toString()]])
-    return `修改指令: ${command} 完成`;
+    if (groupId !== '') {
+        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command, type, tag, info, '', groupId, '', true.toString()]])
+    } else {
+        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command, type, tag, info, userId, groupId, '', true.toString()]])
+    }
+    return `修改指令：[${command}] 完成`;
 }
 
 

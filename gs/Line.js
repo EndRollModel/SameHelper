@@ -94,8 +94,14 @@ Line._textMessageHandle = (event) => {
         }
         case Command.commandTypeList.UPLOAD: { // 上傳圖片
             // Sheet.searchTemp(); 查詢是否
-            // const checkRepeat = Sheet.searchCommand(msgInfo.command, Sheet.COMMAND_TYPE.IMAGE, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
-            const checkRepeat = Sheet.searchTemp(msgInfo.command, Date.now(),)
+            const checkRepeat = Sheet.searchTemp(msgInfo.command, Date.now(), event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            if (Object.hasOwn(checkRepeat, 'info')) {
+                // 如果重複了
+                msgInfo.msg = `目前已經有重複的指令，等待上傳中`
+            } else {
+                // 沒有指令 建立
+                msgInfo.msg = Sheet.appendTemp(msgInfo.command, msgInfo.tag, Date.now(), event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            }
             break;
         }
         case Command.commandTypeList.EDIT: // 編輯(棄用)
@@ -108,7 +114,8 @@ Line._textMessageHandle = (event) => {
             const commandList = Sheet.searchCommand(msgInfo.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
             if (Object.hasOwn(commandList, 'info')) {
                 msgInfo.msg = commandList.info;
-            }else {
+                msgInfo.msgType = commandList.type;
+            } else {
                 msgInfo.msg = `沒有此指令!`
             }
             break;
@@ -117,17 +124,38 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.NOPE: // 如果msg內有東西 則回傳msg
             return;
     }
-    if(msgInfo.msg !== ''){
-        return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg));
+    if (msgInfo.msg !== '') {
+        if (msgInfo.msgType === 'image') {
+            return Line._replyMsg(event, Line._imageStyleBody(msgInfo.msg))
+        } else {
+            return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg));
+        }
     }
-    // return Line._replyMsg(event, Line._textStyleBody(`傳入的指令為:${msgInfo.type}`))
 }
 
 Line._imageMessageHandle = (event) => {
+    const msgInfo = {}
     // 傳送圖片若是符合上傳條件才上傳 所以先搜尋上傳條件temp表 並且要搜尋groupId
+    // 先搜尋temp中的內容 因為只有圖片 不會知道指令內容是什麼
+    const checkTemp = Sheet.searchTemp('', Date.now(), event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+    if (!Object.hasOwn(checkTemp, 'command')) return;
+    // 有指令 搜尋圖片id 上傳圖片
     const msgId = event.message.id;
     const imageFile = Line._getImageContent(msgId);
-    const uploadUrl = Storage.uploadImage('Test', imageFile);
+    const imageName = event.source.type === 'group' ? `${event.source.groupId}_${checkTemp.command}` : `${event.source.userId}_${checkTemp.command}`;
+    const uploadUrl = Storage.uploadImage(imageName, imageFile);
+    const checkCommand = Sheet.searchCommand(checkTemp.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+    if (Object.hasOwn(checkCommand, 'info')) {
+        // 重複了 覆蓋指令
+        msgInfo.msg = Sheet.editCommand(checkTemp.command, Sheet.COMMAND_TYPE.IMAGE, checkCommand.tag, uploadUrl, checkCommand.index, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+    } else {
+        // 沒有重複 新增指令
+        msgInfo.msg = Sheet.appendCommand(checkTemp.command, Sheet.COMMAND_TYPE.IMAGE, checkCommand.tag, uploadUrl, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+    }
+    Sheet.editTempStatus(checkTemp.index)
+    if (msgInfo.msg !== '') {
+        return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg))
+    }
 }
 
 
@@ -151,8 +179,8 @@ Line._textStyleBody = (text) => {
 Line._imageStyleBody = (imageUrl) => {
     return {
         type: 'image',
-        originalContentUrl: `${imageUrl}`,
-        previewImageUrl: `${imageUrl}`
+        originalContentUrl: imageUrl,
+        previewImageUrl: imageUrl,
     }
 }
 
