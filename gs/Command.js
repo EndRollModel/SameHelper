@@ -108,12 +108,12 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要新增指令:\n格式:#新增,<指令名稱>,<指令內容>`
+                    action.msg = `若要新增指令:\n格式:#新增,(指令名稱),(指令內容)`
                     break
                 default:
                 case commands.length === 2:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#新增,<指令名稱>,<指令內容>`
+                    action.msg = `指令中缺少必要的內容\n格式:#新增,(指令名稱),(指令內容)`
                     break;
             }
             break;
@@ -131,7 +131,7 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#刪除,<指令名稱>`;
+                    action.msg = `指令中缺少必要的內容\n格式:#刪除,(指令名稱)`;
                     break;
                 default:
                     break;
@@ -154,11 +154,11 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要使用上傳指令:\n格式:#上傳,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
+                    action.msg = `若要使用上傳指令:\n格式:#上傳,(指令名稱),(tag(可不填))\n替換指令時也使用同樣內容即可`
                     break
                 default:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#上傳,<指令名稱>,<tag(可不填)>`
+                    action.msg = `指令中缺少必要的內容\n格式:#上傳,(指令名稱),(tag(可不填))`
                     break;
             }
             break;
@@ -176,11 +176,11 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要使用上傳指令:\n格式:#抽,<指令名稱>,<tag(可不填)>\n替換指令時也使用同樣內容即可`
+                    action.msg = `若要使用上傳指令:\n格式:#抽,(指令名稱),(tag(可不填))\n替換指令時也使用同樣內容即可`
                     break
                 default:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#抽,<指令名稱>,<tag(可不填)>`
+                    action.msg = `指令中缺少必要的內容\n格式:#抽,(指令名稱),(tag(可不填))`
                     break;
             }
             break;
@@ -208,3 +208,4 @@ Command.textHandle = (text) => {
     }
     return action;
 }
+
