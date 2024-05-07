@@ -103,6 +103,7 @@ Command.textHandle = (text) => {
                     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
                     break;
                 case commands.length === 3: // 新增指令及內容
+                    // *新增條件是否為系統用的指令 是的話就拒絕
                     action.command = commands[1].trim();
                     action.info = commands[2].trim();
                     break;
@@ -208,4 +209,3 @@ Command.textHandle = (text) => {
     }
     return action;
 }
-

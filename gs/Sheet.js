@@ -178,7 +178,7 @@ Sheet.appendTemp = (command, tag, date, userId, groupId) => {
     // 根據
     // command tag date userId	groupId	status
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
-    tabPage.appendRow([command, tag, date + Sheet._tempDelayTime, userId, groupId, true.toString()])
+    tabPage.appendRow([command.toString(), tag.toString(), date + Sheet._tempDelayTime, userId, groupId, true.toString()])
     return `請於${Sheet._tempDelayTime / 1000}秒內上傳圖片 指令才會建立。`
 }
 
@@ -228,12 +228,10 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
             // 新增指令時需要查詢是否有對應的種類內容
             if (groupId !== '') {
                 return (elem.target[commandIndex] === command &&
-                    elem.target[typeIndex] === type &&
                     elem.target[groupIndex] === groupId)
             } else {
                 return (elem.target[commandIndex] === command &&
-                    elem.target[userIndex] === userId &&
-                    elem.target[typeIndex] === type)
+                    elem.target[userIndex] === userId )
             }
         }
     });
@@ -263,9 +261,9 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
     // ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
     if (groupId !== '') {
-        tabPage.appendRow([command, type, tag, info, '', groupId, '', true.toString()]);
+        tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]);
     } else {
-        tabPage.appendRow([command, type, tag, info, userId, groupId, '', true.toString()]);
+        tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), userId, groupId, '', true.toString()]);
     }
     return `新增指令：[${command}] 完成`
 }
@@ -284,9 +282,9 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
 Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
     if (groupId !== '') {
-        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command, type, tag, info, '', groupId, '', true.toString()]])
+        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]])
     } else {
-        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command, type, tag, info, userId, groupId, '', true.toString()]])
+        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, '', true.toString()]])
     }
     return `修改指令：[${command}] 完成`;
 }

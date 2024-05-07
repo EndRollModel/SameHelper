@@ -122,7 +122,7 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.RECORD: // 紀錄 目前先不寫功能
             break;
         case Command.commandTypeList.NOPE: // 如果msg內有東西 則回傳msg
-            return;
+            break;
     }
     if (msgInfo.msg !== '') {
         if (msgInfo.msgType === 'image') {
