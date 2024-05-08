@@ -107,18 +107,20 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 3: // 新增指令及內容
                     // *新增條件是否為系統用的指令 是的話就拒絕
-                    if (Command._systemCommand.includes(commands[1])) {
+                    let addCommand = commands[1].trim(); // 指令不可空白
+                    let commandInfo = commands[2]; // 內容不限制空白
+                    if (Command._systemCommand.includes(addCommand)) {
                         action.type = Command.commandTypeList.NOPE;
                         action.msg = `無法使用指令新增指令!`
                     } else {
-                        if(commands[1].trim().startsWith('=')){
-                            commands[1] = Command._trySymbol + commands[1]
+                        if(addCommand.startsWith('=')){
+                            addCommand = Command._trySymbol + addCommand;
                         }
-                        if(commands[2].trim().startsWith('=')){
-                            commands[2] = Command._trySymbol + commands[2]
+                        if(commandInfo.startsWith('=')){
+                            commandInfo = Command._trySymbol + commandInfo;
                         }
-                        action.command = commands[1].trim();
-                        action.info = commands[2].trim();
+                        action.command = addCommand;
+                        action.info = commands[2];
                     }
                     break;
                 case commands.length === 1:
