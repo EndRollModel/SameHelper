@@ -81,6 +81,25 @@ Line._textMessageHandle = (event) => {
     switch (msgInfo.type) {
         case Command.commandTypeList.HELP: // 說明
             break;
+        case Command.commandTypeList.SEARCH:
+            const searchCommands = Sheet.searchCanUseCommand(userId, groupId);
+            if (searchCommands.length > 0) {
+                let defText = groupId === '' ? `此群組可用自訂指令為：\n` : '使用者已建立的指令為：\n';
+                msgInfo.msg = defText
+                searchCommands.forEach((e, i) => {
+                    if (e.tag !== '') {
+                        msgInfo.msg += `名稱：${e.command}\t Tag: ${e.tag}`;
+                    } else {
+                        msgInfo.msg += `名稱：${e.command}`;
+                    }
+                    if (i !== searchCommands.length - 1) {
+                        msgInfo.msg += '\n'
+                    }
+                })
+            } else {
+                msgInfo.msg = groupId === '' ? `使用者還未建立任何可用指令` : `此群組尚未建立任何可用指令`
+            }
+            break
         case Command.commandTypeList.ADD:
         case Command.commandTypeList.MEMO: {// 合併但其實不使用
             // 先搜尋是否有該使用者跟該群組id的指令 並且是否一樣有該指令

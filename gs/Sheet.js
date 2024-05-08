@@ -249,6 +249,47 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
 }
 
 /**
+ * 查詢對象可用指令
+ * @param userId
+ * @param groupId
+ * @return {*[]}
+ */
+Sheet.searchCanUseCommand = (userId, groupId) =>{
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
+    const newData = allData.map((target, index) => ({target, index}));
+    const titleList = newData[0].target;
+    const filter = newData.filter((elem) => {
+        const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
+        const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        // 新增指令時需要查詢是否有對應的種類內容
+        if (groupId !== '') {
+                return elem.target[groupIndex] === groupId
+        } else {
+                return elem.target[userIndex] === userId
+        }
+    });
+    if (filter.length > 0) {
+        const returnData = []
+        // {target : [], index : }
+        filter.forEach((fer)=>{
+            const returnObject = {}
+            fer.target.forEach((e, i)=>{
+                if(returnObject[titleList[i]] === Sheet.Dictionary.COMMAND ||
+                    returnObject[titleList[i]] === Sheet.Dictionary.type ||
+                    returnObject[titleList[i]] === Sheet.Dictionary.TAG){
+                    returnObject[titleList[i]] = e
+                }
+            })
+            returnData.push(returnObject)
+        });
+        return returnData;
+    } else {
+        return []
+    }
+}
+
+/**
  * 抽選tag的所有內容
  * @param tag
  * @param userId

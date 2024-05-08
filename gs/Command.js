@@ -20,7 +20,7 @@ Command._systemCommand = [
     '增加', 'add', '新增', // 新增指令
     '編輯', 'edit', '修改', // 修改指令
     '刪除', 'del', // 刪除指令
-    'help', '幫助', '?', // 說明
+    'help', '幫助', // 說明
     '上傳', 'upload', // 上傳圖片
     '抽', // 抽選<tag>
     '紀錄', 'record', //
@@ -29,7 +29,7 @@ Command._systemCommand = [
 ]
 
 Command._actionList = [
-    {type: 'help', keyword: ['help', '幫助', '?']},
+    {type: 'help', keyword: ['help', '幫助']},
     {type: 'add', keyword: ['add', '增加', '新增']},
     // {type: 'edit', keyword: ['edit', '編輯', '修改']},
     {type: 'del', keyword: ['del', '刪除']},
@@ -61,7 +61,7 @@ Command._commandTypeCheck = (text) => {
     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
     const firstCommand = text.split(commandReg)[0].trim();
     const isSymCommand = Command._symbolCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
-    const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1)) // 去掉第一位 必須完全符合
+    const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1).toLowerCase()) // 去掉第一位 必須完全符合
     if (isSymCommand && isSysCommand) {
         const commandText = firstCommand.substring(1);
         const commandType = Command._actionList.find((e) => e.keyword.includes(commandText))
@@ -72,8 +72,12 @@ Command._commandTypeCheck = (text) => {
             const randomCheck = new RegExp(Command._randomSplitSymbol.join('|'), 'g');
             const randomMatch = text.match(randomCheck);
             const keyword = Command._actionList[Command._actionList.findIndex((e) => e.type === Command.commandTypeList.RANDOM)].keyword[0];
-            if (randomMatch.length > 0 && text.startsWith(`${text[0]}${keyword}${randomMatch[0]}`)) {
-                return Command.commandTypeList.RANDOM;
+            if (randomMatch != null) {
+                if (text.startsWith(`${text[0]}${keyword}${randomMatch[0]}`)) {
+                    return Command.commandTypeList.RANDOM;
+                } else {
+                    return Command.commandTypeList.CUSTOM;
+                }
             } else {
                 return Command.commandTypeList.CUSTOM;
             }
@@ -104,7 +108,12 @@ Command.textHandle = (text) => {
         case Command.commandTypeList.HELP:
             action.type = Command.commandTypeList.HELP;
             // 依據群組或是個人拉取指令內容
-            action.msg = `目前可使用指令\n#新增, #上傳`
+            action.msg = `本機器人可使用以下符號觸發指令\n[${Command._symbolCommand.join('與')}]\n`
+            action.msg += `指令內容\n---------\n`
+            action.msg += `新增指令：\n格式：#新增,(指令名稱),(指令內容)\n範例：#新增,yt,youtube(;)com\n說明：呼叫指令時#yt即可讓機器人回傳\n---------\n`;
+            action.msg += `上傳指令：\n格式：#上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立 完成後 呼叫指令即可貼出圖 tag則是供分類使用\n---------\n`;
+            action.msg += `抽選指令：\n格式：#抽,(tag) 或 #抽;(1,2,3,4,5)\n說明：抽選Tag時可直接抽選圖片的內容 後者可自訂文字內容抽選(使用逗號作為分隔符號即可)\n---------\n`;
+            action.msg += `查詢指令：\n格式：#查詢 \n說明：回傳已新增的所有自定義指令\n---------\n`;
             break;
         case Command.commandTypeList.SEARCH:
             break;
