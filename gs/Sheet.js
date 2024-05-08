@@ -361,6 +361,8 @@ Sheet._checkAllSheetTab = () => {
             Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setHorizontalAlignment("center");
             Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setFontWeight("bold");
             // sheet.setColumnWidth(columnIndex, columnWidth);
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1 , Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setNumberFormat("@");
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1 , Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setHorizontalAlignment("center");
             if (tab.name === Sheet.Dictionary.USERS || tab.name === Sheet.Dictionary.GROUPS)
                 Sheet.commandSpreadSheet.getSheets()[tabIndex].setColumnWidth(1, 260)
         }

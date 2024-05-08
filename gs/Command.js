@@ -10,6 +10,9 @@ Command._symbolCommand = [
 // 分隔符號
 Command._spiltSymbol = [',', '，']
 
+// 防止公式化加上的標誌
+Command._trySymbol = "'";
+
 // 標準指令
 Command._systemCommand = [
     '增加', 'add', '新增', // 新增指令
@@ -104,8 +107,19 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 3: // 新增指令及內容
                     // *新增條件是否為系統用的指令 是的話就拒絕
-                    action.command = commands[1].trim();
-                    action.info = commands[2].trim();
+                    if (Command._systemCommand.includes(commands[1])) {
+                        action.type = Command.commandTypeList.NOPE;
+                        action.msg = `無法使用指令新增指令!`
+                    } else {
+                        if(commands[1].trim().startsWith('=')){
+                            commands[1] = Command._trySymbol + commands[1]
+                        }
+                        if(commands[2].trim().startsWith('=')){
+                            commands[2] = Command._trySymbol + commands[2]
+                        }
+                        action.command = commands[1].trim();
+                        action.info = commands[2].trim();
+                    }
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
@@ -122,21 +136,21 @@ Command.textHandle = (text) => {
         case Command.commandTypeList.EDIT: {break;}
         case Command.commandTypeList.DEL: {
             const commands = text.split(commandReg);
-            switch (true){ // 格式 <action> <command>
-                case commands.length > 2:
-                    action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
-                    break;
-                case commands.length === 2:
-                    action.info = commands[1].trim();
-                    break;
-                case commands.length === 1:
-                    action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#刪除,(指令名稱)`;
-                    break;
-                default:
-                    break;
-            }
+            // switch (true){ // 格式 <action> <command>
+            //     case commands.length > 2:
+            //         action.type = Command.commandTypeList.NOPE;
+            //         action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
+            //         break;
+            //     case commands.length === 2:
+            //         action.info = commands[1].trim();
+            //         break;
+            //     case commands.length === 1:
+            //         action.type = Command.commandTypeList.NOPE;
+            //         action.msg = `指令中缺少必要的內容\n格式:#刪除,(指令名稱)`;
+            //         break;
+            //     default:
+            //         break;
+            // }
             break;
         }
         case Command.commandTypeList.UPLOAD: {
