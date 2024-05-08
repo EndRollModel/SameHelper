@@ -76,31 +76,33 @@ Line._messageHandle = (event) => {
 Line._textMessageHandle = (event) => {
     // 直接判斷邏輯了
     const msgInfo = Command.textHandle(event.message.text);
+    const userId = event.source.userId;
+    const groupId = event.source.type === 'group' ? event.source.groupId : '';
     switch (msgInfo.type) {
         case Command.commandTypeList.HELP: // 說明
             break;
         case Command.commandTypeList.ADD:
         case Command.commandTypeList.MEMO: {// 合併但其實不使用
             // 先搜尋是否有該使用者跟該群組id的指令 並且是否一樣有該指令
-            const checkRepeat = Sheet.searchCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            const checkRepeat = Sheet.searchCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, userId, groupId);
             if (Object.hasOwn(checkRepeat, 'info')) {
                 // 重複了 覆蓋指令
-                msgInfo.msg = Sheet.editCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, checkRepeat.index, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+                msgInfo.msg = Sheet.editCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, checkRepeat.index, userId, groupId);
             } else {
                 // 沒有重複 新增指令
-                msgInfo.msg = Sheet.appendCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+                msgInfo.msg = Sheet.appendCommand(msgInfo.command, Sheet.COMMAND_TYPE.TEXT, msgInfo.tag, msgInfo.info, userId, groupId);
             }
             break;
         }
         case Command.commandTypeList.UPLOAD: { // 上傳圖片
             // Sheet.searchTemp(); 查詢是否
-            const checkRepeat = Sheet.searchTemp(msgInfo.command, Date.now(), event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            const checkRepeat = Sheet.searchTemp(msgInfo.command, Date.now(), userId, groupId);
             if (Object.hasOwn(checkRepeat, 'info')) {
                 // 如果重複了
                 msgInfo.msg = `目前已經有重複的指令，等待上傳中`
             } else {
                 // 沒有指令 建立
-                msgInfo.msg = Sheet.appendTemp(msgInfo.command, msgInfo.tag, Date.now(), event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+                msgInfo.msg = Sheet.appendTemp(msgInfo.command, msgInfo.tag, Date.now(), userId, groupId);
             }
             break;
         }
@@ -109,11 +111,20 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.DEL: // 刪除
             break;
         case Command.commandTypeList.RANDOM: // 抽
+            if (msgInfo.tag !== '') { // 空值會成立
+                const getTagData = Sheet.searchTagData(msgInfo.tag, userId, groupId);
+                if (getTagData.length > 0) {
+                    msgInfo.msgType = 'image'
+                    msgInfo.msg = getTagData[Math.floor(getTagData.length * Math.random())].info;
+                } else {
+                    msgInfo.msg = '沒有該Tag的資料!'
+                }
+            }
             break;
         case Command.commandTypeList.CUSTOM: // 自訂 呼叫時使用
-            const commandList = Sheet.searchCommand(msgInfo.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+            const commandList = Sheet.searchCommand(msgInfo.command, null, userId, groupId);
             if (Object.hasOwn(commandList, 'info')) {
-                if(commandList.info.indexOf(`${Sheet._trySymbol}=`) > -1){
+                if (commandList.info.indexOf(`${Sheet._trySymbol}=`) > -1) {
                     commandList.info[0].shift()
                 }
                 msgInfo.msg = commandList.info;
@@ -142,18 +153,20 @@ Line._imageMessageHandle = (event) => {
     // 先搜尋temp中的內容 因為只有圖片 不會知道指令內容是什麼
     const checkTemp = Sheet.searchTemp('', Date.now(), event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
     if (!Object.hasOwn(checkTemp, 'command')) return;
+    const userId = event.source.userId;
+    const groupId = event.source.type === 'group' ? event.source.groupId : '';
     // 有指令 搜尋圖片id 上傳圖片
     const msgId = event.message.id;
     const imageFile = Line._getImageContent(msgId);
-    const imageName = event.source.type === 'group' ? `${event.source.groupId}_${checkTemp.command}` : `${event.source.userId}_${checkTemp.command}`;
+    const imageName = event.source.type === 'group' ? `${event.source.groupId}_${checkTemp.command}` : `${userId}_${checkTemp.command}`;
     const uploadUrl = Storage.uploadImage(imageName, imageFile);
-    const checkCommand = Sheet.searchCommand(checkTemp.command, null, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+    const checkCommand = Sheet.searchCommand(checkTemp.command, null, userId, groupId);
     if (Object.hasOwn(checkCommand, 'info')) {
         // 重複了 覆蓋指令
-        msgInfo.msg = Sheet.editCommand(checkTemp.command, Sheet.COMMAND_TYPE.IMAGE, checkCommand.tag, uploadUrl, checkCommand.index, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+        msgInfo.msg = Sheet.editCommand(checkTemp.command, Sheet.COMMAND_TYPE.IMAGE, checkTemp.tag, uploadUrl, checkCommand.index, userId, groupId);
     } else {
         // 沒有重複 新增指令
-        msgInfo.msg = Sheet.appendCommand(checkTemp.command, Sheet.COMMAND_TYPE.IMAGE, checkCommand.tag, uploadUrl, event.source.userId, event.source.type === 'group' ? event.source.groupId : '');
+        msgInfo.msg = Sheet.appendCommand(checkTemp.command, Sheet.COMMAND_TYPE.IMAGE, checkTemp.tag, uploadUrl, userId, groupId);
     }
     Sheet.editTempStatus(checkTemp.index)
     if (msgInfo.msg !== '') {

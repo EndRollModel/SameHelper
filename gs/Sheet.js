@@ -37,6 +37,7 @@ Sheet.Dictionary = {
     TYPE: 'type',
     INFO: 'info',
     DATE: 'date',
+    TAG: 'tag',
 }
 
 Sheet.COMMAND_TYPE = {
@@ -179,7 +180,7 @@ Sheet.appendTemp = (command, tag, date, userId, groupId) => {
     // command tag date userId	groupId	status
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
     tabPage.appendRow([command.toString(), tag.toString(), date + Sheet._tempDelayTime, userId, groupId, true.toString()])
-    return `請於${Sheet._tempDelayTime / 1000}秒內上傳圖片 指令才會建立。`
+    return `接收到上傳指令 請於${Sheet._tempDelayTime / 1000}秒內上傳圖片。`
 }
 
 /**
@@ -231,7 +232,7 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
                     elem.target[groupIndex] === groupId)
             } else {
                 return (elem.target[commandIndex] === command &&
-                    elem.target[userIndex] === userId )
+                    elem.target[userIndex] === userId)
             }
         }
     });
@@ -244,6 +245,51 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
         return returnData;
     } else {
         return {}
+    }
+}
+
+/**
+ * 抽選tag的所有內容
+ * @param tag
+ * @param userId
+ * @param groupId
+ * @return {{}}
+ */
+Sheet.searchTagData = (tag, userId, groupId) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
+    const newData = allData.map((target, index) => ({target, index}));
+    const titleList = newData[0].target;
+    const filter = newData.filter((elem) => {
+        const tagIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TAG);
+        const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
+        const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        // 新增指令時需要查詢是否有對應的種類內容
+        if (groupId !== '') {
+            return (elem.target[tagIndex] === tag &&
+                elem.target[groupIndex] === groupId)
+        } else {
+            return (elem.target[tagIndex] === tag &&
+                elem.target[userIndex] === userId)
+        }
+    });
+    if (filter.length > 0) {
+        const returnData = []
+        // {target : [], index : }
+        filter.forEach((fer)=>{
+            const returnObject = {}
+            fer.target.forEach((e, i)=>{
+                returnObject[titleList[i]] = e
+            })
+            returnData.push(returnObject)
+        });
+        // filter[0].target.forEach((e, i) => {
+        //     returnData[titleList[i]] = e
+        // })
+        // returnData.index = filter[0].index;
+        return returnData;
+    } else {
+        return []
     }
 }
 
@@ -265,7 +311,8 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
     } else {
         tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), userId, groupId, '', true.toString()]);
     }
-    return `新增指令：[${command}] 完成`
+    const checkFormula = `${Command._trySymbol}=`
+    return `新增指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`
 }
 
 /**
@@ -286,7 +333,8 @@ Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
     } else {
         tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, '', true.toString()]])
     }
-    return `修改指令：[${command}] 完成`;
+    const checkFormula = `${Command._trySymbol}=`
+    return `修改指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`;
 }
 
 
@@ -361,8 +409,8 @@ Sheet._checkAllSheetTab = () => {
             Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setHorizontalAlignment("center");
             Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(1, 1, 1, tab.title.length).setFontWeight("bold");
             // sheet.setColumnWidth(columnIndex, columnWidth);
-            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1 , Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setNumberFormat("@");
-            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1 , Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setHorizontalAlignment("center");
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1, Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setNumberFormat("@");
+            Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1, Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setHorizontalAlignment("center");
             if (tab.name === Sheet.Dictionary.USERS || tab.name === Sheet.Dictionary.GROUPS)
                 Sheet.commandSpreadSheet.getSheets()[tabIndex].setColumnWidth(1, 260)
         }

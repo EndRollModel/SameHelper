@@ -13,6 +13,8 @@ Command._spiltSymbol = [',', '，']
 // 防止公式化加上的標誌
 Command._trySymbol = "'";
 
+Command._randomSplitSymbol = [';', '；'];
+
 // 標準指令
 Command._systemCommand = [
     '增加', 'add', '新增', // 新增指令
@@ -23,7 +25,7 @@ Command._systemCommand = [
     '抽', // 抽選<tag>
     '紀錄', 'record', //
     // '筆記', 'memo', '備忘', //備忘
-    '指令',
+    '查詢', '指令', '可用'
 ]
 
 Command._actionList = [
@@ -35,6 +37,7 @@ Command._actionList = [
     {type: 'random', keyword: ['抽']},
     {type: 'memo', keyword: ['備忘', 'memo',]}, // 效果與新增一樣
     {type: 'record', keyword: ['record', '記憶']},
+    {type: 'search', keyword: ['查詢', 'search', '指令', '可用']}
 ]
 
 // 對照用的return type
@@ -50,6 +53,7 @@ Command.commandTypeList = {
     MEMO: 'memo',
     RECORD: 'record',
     ERROR: 'error',
+    SEARCH: 'search',
 }
 
 // 確認指令需求
@@ -64,10 +68,17 @@ Command._commandTypeCheck = (text) => {
         return commandType.type
     } else {
         if (isSymCommand && !isSysCommand) {
-            // 通常就是自訂類的
-            return Command.commandTypeList.CUSTOM;
+            // 判定是否為抽選 否則為自訂
+            const randomCheck = new RegExp(Command._randomSplitSymbol.join('|'), 'g');
+            const randomMatch = text.match(randomCheck);
+            const keyword = Command._actionList[Command._actionList.findIndex((e) => e.type === Command.commandTypeList.RANDOM)].keyword[0];
+            if (randomMatch.length > 0 && text.startsWith(`${text[0]}${keyword}${randomMatch[0]}`)) {
+                return Command.commandTypeList.RANDOM;
+            } else {
+                return Command.commandTypeList.CUSTOM;
+            }
         } else {
-            // 完全沒有符合內容 回傳
+            // 完全沒有符合內容
             return Command.commandTypeList.NOPE;
         }
     }
@@ -95,6 +106,8 @@ Command.textHandle = (text) => {
             // 依據群組或是個人拉取指令內容
             action.msg = `目前可使用指令\n#新增, #上傳`
             break;
+        case Command.commandTypeList.SEARCH:
+            break;
         case Command.commandTypeList.ADD:
         case Command.commandTypeList.MEMO: {
             // 新增指令 (純文字)
@@ -113,14 +126,14 @@ Command.textHandle = (text) => {
                         action.type = Command.commandTypeList.NOPE;
                         action.msg = `無法使用指令新增指令!`
                     } else {
-                        if(addCommand.startsWith('=')){
+                        if (addCommand.startsWith('=')) {
                             addCommand = Command._trySymbol + addCommand;
                         }
-                        if(commandInfo.startsWith('=')){
+                        if (commandInfo.startsWith('=')) {
                             commandInfo = Command._trySymbol + commandInfo;
                         }
                         action.command = addCommand;
-                        action.info = commands[2];
+                        action.info = commandInfo;
                     }
                     break;
                 case commands.length === 1:
@@ -135,7 +148,9 @@ Command.textHandle = (text) => {
             }
             break;
         }
-        case Command.commandTypeList.EDIT: {break;}
+        case Command.commandTypeList.EDIT: {
+            break;
+        }
         case Command.commandTypeList.DEL: {
             const commands = text.split(commandReg);
             // switch (true){ // 格式 <action> <command>
@@ -181,37 +196,41 @@ Command.textHandle = (text) => {
             break;
         }
         case Command.commandTypeList.RANDOM: {
-            const commands = text.split(commandReg);
-            switch (true) {// 格式 <action>,<tag>
-                case commands.length > 2:
-                    action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
-                    break;
-                case commands.length === 2:
-                    action.command = commands[1].trim();
-                    action.tag = commands[2].trim();
-                    break;
-                case commands.length === 1:
-                    action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要使用上傳指令:\n格式:#抽,(指令名稱),(tag(可不填))\n替換指令時也使用同樣內容即可`
-                    break
-                default:
-                    action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#抽,(指令名稱),(tag(可不填))`
-                    break;
+            const randomSym = new RegExp(Command._randomSplitSymbol.join('|'), 'g')
+            const checkText = text.match(randomSym);
+            if (checkText != null) {
+                const randomObject = text.split(randomSym)[1];
+                const objs = randomObject.split(commandReg);
+                action.type = Command.commandTypeList.NOPE;
+                action.msg = objs[Math.floor((Math.random() * objs.length))];
+            } else {
+                const commands = text.split(commandReg);
+                switch (true) {// 格式 <action>,<tag>
+                    case commands.length > 2:
+                        action.type = Command.commandTypeList.NOPE;
+                        action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
+                        break;
+                    case commands.length === 2:
+                        action.tag = commands[1].trim();
+                        break;
+                    case commands.length === 1:
+                        action.type = Command.commandTypeList.NOPE;
+                        action.msg = `若要使用抽取指令:\n格式:\n抽圖片： #抽,(tag名稱)\n抽文字： #抽;(多個文字項目) \nex: #抽;麥當勞,頂呱呱,肯德基`
+                        break
+                    default:
+                        action.type = Command.commandTypeList.NOPE;
+                        action.msg = `指令中缺少必要的內容\n格式:抽圖片： #抽,(tag名稱)\n抽文字： #抽;(多個文字項目) \nex: #抽;麥當勞,頂呱呱,肯德基`
+                        break;
+                }
             }
             break;
         }
         case Command.commandTypeList.CUSTOM: {
             const commands = text.split(commandReg);
             switch (true) {// 格式 <action>
-                // case commands.length > 1:
-                //     action.type = Command.commandTypeList.NOPE;
-                //     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`
-                //     break;
                 case commands.length === 1:
                     const reg = new RegExp(Command._symbolCommand.join('|'))
-                    action.command = commands[0].replace(reg, '').trim();
+                    action.command = commands[0].startsWith('=') ? Command._trySymbol + commands[0].replace(reg, '').trim() : commands[0].replace(reg, '').trim();
                     break;
                 default : // 自訂並且大於數量
                     action.type = Command.commandTypeList.NOPE
@@ -220,6 +239,7 @@ Command.textHandle = (text) => {
             break;
         }
         case Command.commandTypeList.NOPE: {
+            // nothing..
             break;
         }
     }
