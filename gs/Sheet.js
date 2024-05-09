@@ -66,19 +66,6 @@ Sheet.writeRecord = (type, info) => {
             break;
     }
 }
-////
-
-// Sheet.searchTempValue = (userId, groupId) => {
-//     const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
-//     const tabPage = Sheet.commandSpreadSheet.getSheets()[tabIndex]; // 先找到sheet
-// }
-//
-//
-// Sheet.writeTempData = (userId, groupId = '') => {
-//     const tabIndex = Sheet.getALLSheetName(Sheet.commandSpreadSheet).findIndex((e) => e === Sheet.Dictionary.TEMP);
-//     Sheet.commandSpreadSheet.getSheets()[tabIndex]
-// }
-
 
 /**
  * 搜尋表中key的值
@@ -121,6 +108,47 @@ Sheet._eventRecord = (tabName, action, key, value, name = '') => {
     }
 }
 
+Sheet.searchALLData = (pageName ,userId, groupId, typesNames, commands) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, pageName);
+    const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
+    // const indexData = allData.map((target, index) => ({target, index}));
+    // const titleList = indexData[0].target;
+    const allDataList = [];
+    allData.forEach((e, i)=>{
+        if (i === 0) {return;}
+        const obj = {};
+        obj[allData[0].target[i]] = e.target[i]
+        obj.index = i;
+        allDataList.push(obj)
+    })
+    allDataList.filter((e)=>{
+        allDataList[0].target
+    })
+    // const filter = indexData.filter((e) => {
+    //     const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND)
+    //     const dateIndex = titleList.findIndex((e) => e === Sheet.Dictionary.DATE);
+    //     const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
+    //     const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+    //     if (command === '') {
+    //         // 圖片上傳的時候要檢查這裡 確認上傳者與群組一致 並且時間小於時限
+    //         return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
+    //     } else {
+    //         // 一般檢查用的 一定會有指令
+    //         if (groupId !== '') {
+    //             // 如果是群組上傳的 主要檢查群組的內容
+    //             return e.target[commandIndex] === command &&
+    //                 parseFloat(e.target[dateIndex]) > date &&
+    //                 e.target[groupIndex] === groupId
+    //         } else {
+    //             // 如果為使用者上傳的 僅檢查上傳者
+    //             return e.target[commandIndex] === command &&
+    //                 parseFloat(e.target[dateIndex]) > date &&
+    //                 e.target[userIndex] === userId
+    //         }
+    //     }
+    // });
+}
+
 /**************
  *    Temp    *
  *************/
@@ -137,7 +165,7 @@ Sheet.searchTemp = (command, date, userId, groupId) => {
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
         if (command === '') {
-            // 圖片上傳的時候要檢查這裡 確認上傳者與群組為同一地點 並且時間小於時限
+            // 圖片上傳的時候要檢查這裡 確認上傳者與群組一致 並且時間小於時限
             return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
         } else {
             // 一般檢查用的 一定會有指令
@@ -254,7 +282,7 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
  * @param groupId
  * @return {*[]}
  */
-Sheet.searchCanUseCommand = (userId, groupId) =>{
+Sheet.searchCanUseCommand = (userId, groupId) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
     const newData = allData.map((target, index) => ({target, index}));
@@ -264,20 +292,20 @@ Sheet.searchCanUseCommand = (userId, groupId) =>{
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
         // 新增指令時需要查詢是否有對應的種類內容
         if (groupId !== '') {
-                return elem.target[groupIndex] === groupId
+            return elem.target[groupIndex] === groupId
         } else {
-                return elem.target[userIndex] === userId
+            return elem.target[userIndex] === userId
         }
     });
     if (filter.length > 0) {
         const returnData = []
         // {target : [], index : }
-        filter.forEach((fer)=>{
+        filter.forEach((fer) => {
             const returnObject = {}
-            fer.target.forEach((e, i)=>{
-                if(returnObject[titleList[i]] === Sheet.Dictionary.COMMAND ||
+            fer.target.forEach((e, i) => {
+                if (returnObject[titleList[i]] === Sheet.Dictionary.COMMAND ||
                     returnObject[titleList[i]] === Sheet.Dictionary.type ||
-                    returnObject[titleList[i]] === Sheet.Dictionary.TAG){
+                    returnObject[titleList[i]] === Sheet.Dictionary.TAG) {
                     returnObject[titleList[i]] = e
                 }
             })
@@ -317,17 +345,13 @@ Sheet.searchTagData = (tag, userId, groupId) => {
     if (filter.length > 0) {
         const returnData = []
         // {target : [], index : }
-        filter.forEach((fer)=>{
+        filter.forEach((fer) => {
             const returnObject = {}
-            fer.target.forEach((e, i)=>{
+            fer.target.forEach((e, i) => {
                 returnObject[titleList[i]] = e
             })
             returnData.push(returnObject)
         });
-        // filter[0].target.forEach((e, i) => {
-        //     returnData[titleList[i]] = e
-        // })
-        // returnData.index = filter[0].index;
         return returnData;
     } else {
         return []
@@ -382,12 +406,6 @@ Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
 /***************
  *  debug相關  *
  ***************/
-function checkDebugSheet() {
-    const nowList = Sheet.debugSpreadSheet.getSheet().map((e, i) => ({name: e.name, index: i}));
-    Sheet.debugSpreadSheet.getSheet().for((e) => {
-
-    })
-}
 
 /**
  * 取得某張表內的key下的所有值
@@ -452,18 +470,15 @@ Sheet._checkAllSheetTab = () => {
             // sheet.setColumnWidth(columnIndex, columnWidth);
             Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1, Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setNumberFormat("@");
             Sheet.commandSpreadSheet.getSheets()[tabIndex].getRange(2, 1, Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxRows(), Sheet.commandSpreadSheet.getSheets()[tabIndex].getMaxColumns()).setHorizontalAlignment("center");
-            if (tab.name === Sheet.Dictionary.USERS || tab.name === Sheet.Dictionary.GROUPS)
+            if (tab.name === Sheet.Dictionary.USERS || tab.name === Sheet.Dictionary.GROUPS) {
                 Sheet.commandSpreadSheet.getSheets()[tabIndex].setColumnWidth(1, 260)
+            }
         }
     })
 }
 
 
 /**************/
-function recordMember() {
-    // Sheet._recordInfo('groups', Sheet._actionType.join, 'groupId', '12344', '梅子')
-    // Sheet._recordInfo('users', Sheet._dictionary.follow, 'userId', '12344', '梅子')
-}
 
 function checkAllSheet() {
     Sheet._checkAllSheetTab()

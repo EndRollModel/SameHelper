@@ -84,8 +84,7 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.SEARCH:
             const searchCommands = Sheet.searchCanUseCommand(userId, groupId);
             if (searchCommands.length > 0) {
-                let defText = groupId === '' ? `此群組可用自訂指令為：\n` : '使用者已建立的指令為：\n';
-                msgInfo.msg = defText
+                msgInfo.msg = groupId === '' ? `此群組可用自訂指令為：\n` : '使用者已建立的指令為：\n'
                 searchCommands.forEach((e, i) => {
                     if (e.tag !== '') {
                         msgInfo.msg += `名稱：${e.command}\t Tag: ${e.tag}`;
@@ -116,9 +115,9 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.UPLOAD: { // 上傳圖片
             // Sheet.searchTemp(); 查詢是否
             const checkRepeat = Sheet.searchTemp(msgInfo.command, Date.now(), userId, groupId);
-            if (Object.hasOwn(checkRepeat, 'info')) {
+            if (Object.hasOwn(checkRepeat, 'command')) {
                 // 如果重複了
-                msgInfo.msg = `目前已經有重複的指令，等待上傳中`
+                msgInfo.msg = `目前已經重複的指令 [${msgInfo.command}]，等待上傳中`
             } else {
                 // 沒有指令 建立
                 msgInfo.msg = Sheet.appendTemp(msgInfo.command, msgInfo.tag, Date.now(), userId, groupId);
@@ -219,6 +218,27 @@ Line._imageStyleBody = (imageUrl) => {
     }
 }
 
+/**
+ *  join與follow事件的處理
+ */
+Line.followEventFlexBody = (eventType) => {
+    if (eventType === 'join') {
+        // 群組
+    } else {
+        // 個人使用者
+    }
+    return{
+        type: 'text',
+        text: '歡迎使用本機器人，請使用/help了解更多使用方法'
+    }
+}
+
+/**
+ * 用Flex去做旋轉木馬的卡片
+ */
+Line.helpFlexEventBody = (...commands) =>{
+
+}
 
 /**************
  *  Line API  *

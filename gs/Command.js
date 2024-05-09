@@ -13,6 +13,7 @@ Command._spiltSymbol = [',', '，']
 // 防止公式化加上的標誌
 Command._trySymbol = "'";
 
+// 文字抽選時用的分隔符號
 Command._randomSplitSymbol = [';', '；'];
 
 // 標準指令
@@ -35,7 +36,7 @@ Command._actionList = [
     {type: 'del', keyword: ['del', '刪除']},
     {type: 'upload', keyword: ['upload', '上傳']},
     {type: 'random', keyword: ['抽']},
-    {type: 'memo', keyword: ['備忘', 'memo',]}, // 效果與新增一樣
+    {type: 'memo', keyword: ['備忘', 'memo']}, // 效果與新增一樣
     {type: 'record', keyword: ['record', '記憶']},
     {type: 'search', keyword: ['查詢', 'search', '指令', '可用']}
 ]
@@ -111,8 +112,8 @@ Command.textHandle = (text) => {
             action.msg = `本機器人可使用以下符號觸發指令\n[${Command._symbolCommand.join('與')}]\n`
             action.msg += `指令內容\n---------\n`
             action.msg += `新增指令：\n格式：#新增,(指令名稱),(指令內容)\n範例：#新增,yt,youtube(;)com\n說明：呼叫指令時#yt即可讓機器人回傳\n---------\n`;
-            action.msg += `上傳指令：\n格式：#上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立 完成後 呼叫指令即可貼出圖 tag則是供分類使用\n---------\n`;
-            action.msg += `抽選指令：\n格式：#抽,(tag) 或 #抽;(1,2,3,4,5)\n說明：抽選Tag時可直接抽選圖片的內容 後者可自訂文字內容抽選(使用逗號作為分隔符號即可)\n---------\n`;
+            action.msg += `上傳指令：\n格式：#上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立\ntag則是供分類使用\n圖片上傳限制：\n3mb以下並且不能為動圖\n---------\n`;
+            action.msg += `抽選指令：\n格式：#抽,(tag) 或 #抽;(1,2,3,4,5)\n範例：文字抽選 #抽;(麥當勞,肯德基,頂呱呱,丹丹)\n說明：抽選Tag時可直接抽選圖片的內容 後者可自訂文字內容抽選(使用逗號作為分隔符號即可)\n---------\n`;
             action.msg += `查詢指令：\n格式：#查詢 \n說明：回傳已新增的所有自定義指令\n---------\n`;
             break;
         case Command.commandTypeList.SEARCH:
@@ -195,7 +196,7 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要使用上傳指令:\n格式:#上傳,(指令名稱),(tag(可不填))\n替換指令時也使用同樣內容即可`
+                    action.msg = `若要使用上傳指令:\n格式:#上傳,(指令名稱),(tag(可不填))`
                     break
                 default:
                     action.type = Command.commandTypeList.NOPE;
@@ -238,7 +239,7 @@ Command.textHandle = (text) => {
             const commands = text.split(commandReg);
             switch (true) {// 格式 <action>
                 case commands.length === 1:
-                    const reg = new RegExp(Command._symbolCommand.join('|'))
+                    const reg = new RegExp(Command._symbolCommand.join('|'));
                     action.command = commands[0].startsWith('=') ? Command._trySymbol + commands[0].replace(reg, '').trim() : commands[0].replace(reg, '').trim();
                     break;
                 default : // 自訂並且大於數量
