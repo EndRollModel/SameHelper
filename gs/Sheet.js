@@ -12,8 +12,10 @@ Sheet._tempDelayTime = 30 * 1000;
 // 指令表的內容
 Sheet._commandTabList = [
     {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
+    {name: 'singleCommand', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
     {name: 'temp', title: ['command', 'tag', 'date', 'userId', 'groupId', 'status']}, //
-    {name: 'record', title: ['keyword', 'date', 'userId', 'groupId']}, //
+    {name: 'recordKey', title: ['keyword', 'userId', 'groupId', 'status']},
+    {name: 'chatRecord', title: ['chat', 'date', 'userId', 'groupId']},
     {name: 'users', title: ['userId', 'userName', 'status']},
     {name: 'groups', title: ['groupId', 'groupName', 'status']},
 ];
@@ -108,45 +110,25 @@ Sheet._eventRecord = (tabName, action, key, value, name = '') => {
     }
 }
 
-Sheet.searchALLData = (pageName ,userId, groupId, typesNames, commands) => {
+/**
+ * 取得頁面中的所有資料
+ * @param pageName
+ * @return {*[]}
+ */
+Sheet.searchALLData = (pageName) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, pageName);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
-    // const indexData = allData.map((target, index) => ({target, index}));
-    // const titleList = indexData[0].target;
     const allDataList = [];
-    allData.forEach((e, i)=>{
+    allData.forEach((data, i)=>{
         if (i === 0) {return;}
-        const obj = {};
-        obj[allData[0].target[i]] = e.target[i]
+        const obj = {}
         obj.index = i;
-        allDataList.push(obj)
+        data.forEach((info, j)=>{
+            obj[allData[0][j]] = info
+        })
+        allDataList.push(obj);
     })
-    allDataList.filter((e)=>{
-        allDataList[0].target
-    })
-    // const filter = indexData.filter((e) => {
-    //     const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND)
-    //     const dateIndex = titleList.findIndex((e) => e === Sheet.Dictionary.DATE);
-    //     const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
-    //     const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
-    //     if (command === '') {
-    //         // 圖片上傳的時候要檢查這裡 確認上傳者與群組一致 並且時間小於時限
-    //         return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
-    //     } else {
-    //         // 一般檢查用的 一定會有指令
-    //         if (groupId !== '') {
-    //             // 如果是群組上傳的 主要檢查群組的內容
-    //             return e.target[commandIndex] === command &&
-    //                 parseFloat(e.target[dateIndex]) > date &&
-    //                 e.target[groupIndex] === groupId
-    //         } else {
-    //             // 如果為使用者上傳的 僅檢查上傳者
-    //             return e.target[commandIndex] === command &&
-    //                 parseFloat(e.target[dateIndex]) > date &&
-    //                 e.target[userIndex] === userId
-    //         }
-    //     }
-    // });
+    return allDataList
 }
 
 /**************
@@ -432,6 +414,7 @@ Sheet.getALLSheetName = function (sheet) {
 /**
  * 取得該表
  * @param sheet
+ * @param tabName
  * @returns {*}
  */
 Sheet.getSheetTab = function (sheet, tabName) {

@@ -5,7 +5,11 @@ Command._commandDely = 30 * 1000;
 
 // 常用符號作為指令
 Command._symbolCommand = [
-    '!', '！', '#', '＃', '/', '／',
+    '#', '＃',
+]
+// 單人指令符號
+Command._singleSymbolCommand = [
+    '!', '！',
 ]
 // 分隔符號
 Command._spiltSymbol = [',', '，']
