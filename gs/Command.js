@@ -4,12 +4,16 @@ const Command = {};
 Command._commandDely = 30 * 1000;
 
 // 常用符號作為指令
-Command._symbolCommand = [
+Command._globalCommand = [
     '#', '＃',
 ]
-// 單人指令符號
-Command._singleSymbolCommand = [
+// 單人指令符號(群組中個人指令)
+Command._groupSymbolCommand = [
     '!', '！',
+]
+// 個人跨域全域指令
+Command._personalSymbolCommand = [
+    '~', '～'
 ]
 // 分隔符號
 Command._spiltSymbol = [',', '，']
@@ -60,12 +64,17 @@ Command.commandTypeList = {
     ERROR: 'error',
     SEARCH: 'search',
 }
+Command._permissionTypeList = {
+    global: 'global',
+    group: 'group',
+    persona : 'persona',
+}
 
 // 確認指令需求
 Command._commandTypeCheck = (text) => {
     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
     const firstCommand = text.split(commandReg)[0].trim();
-    const isSymCommand = Command._symbolCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
+    const isSymCommand = Command._globalCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
     const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1).toLowerCase()) // 去掉第一位 必須完全符合
     if (isSymCommand && isSysCommand) {
         const commandText = firstCommand.substring(1);
@@ -105,6 +114,7 @@ Command.textHandle = (text) => {
     const action = {};
     action.type = type; // 種類
     action.command = ''; // 指令
+    action.commandType = ''; // public | single
     action.info = ''; // 文字的內容
     action.tag = ''; // 標籤
     action.msg = ''; // 如果需要回傳訊息
@@ -113,7 +123,7 @@ Command.textHandle = (text) => {
         case Command.commandTypeList.HELP:
             action.type = Command.commandTypeList.HELP;
             // 依據群組或是個人拉取指令內容
-            action.msg = `本機器人可使用以下符號觸發指令\n[${Command._symbolCommand.join('與')}]\n`
+            action.msg = `本機器人可使用以下符號觸發指令\n[${Command._globalCommand.join('與')}]\n`
             action.msg += `指令內容\n---------\n`
             action.msg += `新增指令：\n格式：#新增,(指令名稱),(指令內容)\n範例：#新增,yt,youtube(;)com\n說明：呼叫指令時#yt即可讓機器人回傳\n---------\n`;
             action.msg += `上傳指令：\n格式：#上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立\ntag則是供分類使用\n圖片上傳限制：\n3mb以下並且不能為動圖\n---------\n`;
@@ -243,7 +253,7 @@ Command.textHandle = (text) => {
             const commands = text.split(commandReg);
             switch (true) {// 格式 <action>
                 case commands.length === 1:
-                    const reg = new RegExp(Command._symbolCommand.join('|'));
+                    const reg = new RegExp(Command._globalCommand.join('|'));
                     action.command = commands[0].startsWith('=') ? Command._trySymbol + commands[0].replace(reg, '').trim() : commands[0].replace(reg, '').trim();
                     break;
                 default : // 自訂並且大於數量

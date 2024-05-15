@@ -13,6 +13,7 @@ Sheet._tempDelayTime = 30 * 1000;
 Sheet._commandTabList = [
     {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
     {name: 'singleCommand', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
+    {name: 'personCommand', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
     {name: 'temp', title: ['command', 'tag', 'date', 'userId', 'groupId', 'status']}, //
     {name: 'recordKey', title: ['keyword', 'userId', 'groupId', 'status']},
     {name: 'chatRecord', title: ['chat', 'date', 'userId', 'groupId']},
