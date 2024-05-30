@@ -12,7 +12,10 @@ Sheet._tempDelayTime = 30 * 1000;
 // 指令表的內容
 Sheet._commandTabList = [
     {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
-    {name: 'singleCommand', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
+    {
+        name: 'singleCommand',
+        title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'permission', 'history', 'status']
+    }, //
     {name: 'personCommand', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
     {name: 'temp', title: ['command', 'tag', 'date', 'userId', 'groupId', 'status']}, //
     {name: 'recordKey', title: ['keyword', 'userId', 'groupId', 'status']},
@@ -41,6 +44,7 @@ Sheet.Dictionary = {
     INFO: 'info',
     DATE: 'date',
     TAG: 'tag',
+    PERMISSION: 'permission',
 }
 
 Sheet.COMMAND_TYPE = {
@@ -120,11 +124,13 @@ Sheet.searchALLData = (pageName) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, pageName);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
     const allDataList = [];
-    allData.forEach((data, i)=>{
-        if (i === 0) {return;}
+    allData.forEach((data, i) => {
+        if (i === 0) {
+            return;
+        }
         const obj = {}
         obj.index = i;
-        data.forEach((info, j)=>{
+        data.forEach((info, j) => {
             obj[allData[0][j]] = info
         })
         allDataList.push(obj);
@@ -136,7 +142,7 @@ Sheet.searchALLData = (pageName) => {
  *    Temp    *
  *************/
 // 時間超過或是狀態關閉都不予搜尋
-Sheet.searchTemp = (command, date, userId, groupId) => {
+Sheet.searchTemp = (command, date, userId, groupId, permission) => {
     // 檢查時間
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
@@ -144,6 +150,7 @@ Sheet.searchTemp = (command, date, userId, groupId) => {
     const titleList = newData[0].target;
     const filter = newData.filter((e) => {
         const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND)
+        const permissionIndex = titleList.findIndex((e)=> e === Sheet.Dictionary.PERMISSION);
         const dateIndex = titleList.findIndex((e) => e === Sheet.Dictionary.DATE);
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
@@ -184,13 +191,14 @@ Sheet.searchTemp = (command, date, userId, groupId) => {
  * @param date
  * @param userId
  * @param groupId
+ * @param permission
  * @return {`請於${number}秒內上傳圖片 指令才會建立。`}
  */
-Sheet.appendTemp = (command, tag, date, userId, groupId) => {
+Sheet.appendTemp = (command, tag, date, userId, groupId, permission) => {
     // 根據
     // command tag date userId	groupId	status
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.TEMP);
-    tabPage.appendRow([command.toString(), tag.toString(), date + Sheet._tempDelayTime, userId, groupId, true.toString()])
+    tabPage.appendRow([command.toString(), tag.toString(), date + Sheet._tempDelayTime, userId, groupId, permission, true.toString()])
     return `接收到上傳指令 請於${Sheet._tempDelayTime / 1000}秒內上傳圖片。`
 }
 
@@ -216,42 +224,60 @@ Sheet.editTempStatus = (index) => {
  * @param type 指令的類型(text, image)
  * @param userId 使用者id
  * @param groupId 群組id
+ * @param permission 權限
  */
-Sheet.searchCommand = (command, type = '', userId, groupId) => {
+Sheet.searchCommand = (command, type = '', userId, groupId, permission) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
     const newData = allData.map((target, index) => ({target, index}));
     const titleList = newData[0].target;
     const filter = newData.filter((elem) => {
         const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND);
+        const permissionIndex = titleList.findIndex((e) => e === Sheet.Dictionary.PERMISSION)
         const typeIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TYPE);
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
-        if (type === '' || type === null) {
-            // type為空時 為custom指令 僅搜尋來源指令與上傳者
-            if (groupId !== '') {
+        switch (permission) {
+            case Command.permissionTypeList.global: // 群組通用指令
                 return (elem.target[commandIndex] === command &&
-                    elem.target[groupIndex] === groupId)
-            } else {
-                return (elem.target[commandIndex] === command &&
-                    elem.target[userIndex] === userId)
-            }
-        } else {
-            // 新增指令時需要查詢是否有對應的種類內容
-            if (groupId !== '') {
-                return (elem.target[commandIndex] === command &&
-                    elem.target[groupIndex] === groupId)
-            } else {
-                return (elem.target[commandIndex] === command &&
-                    elem.target[userIndex] === userId)
-            }
+                    elem.target[permissionIndex] === permission &&
+                    (elem.target[groupIndex] === groupId || elem.target[userIndex] === userId));
+            case Command.permissionTypeList.group: // 群組中個人指令 全部都一樣才回傳
+                return elem.target[commandIndex] === command &&
+                    elem.target[permissionIndex] === permission &&
+                    elem.target[groupIndex] === groupId &&
+                    elem.target[userIndex] === userId;
+            case Command.permissionTypeList.persona: // 個人專用個人指令 必須為空
+                return elem.target[commandIndex] === command &&
+                    elem.target[permissionIndex] === permission &&
+                    elem.target[userIndex] === userId;
         }
+        // if (type === '' || type === null) {
+        //     // type為空時 為custom指令 僅搜尋來源指令與上傳者
+        //     if (groupId !== '') {
+        //         return (elem.target[commandIndex] === command &&
+        //             elem.target[groupIndex] === groupId)
+        //     } else {
+        //         return (elem.target[commandIndex] === command &&
+        //             elem.target[userIndex] === userId)
+        //     }
+        // } else {
+        //     // 新增指令時需要查詢是否有對應的種類內容
+        //     if (groupId !== '') {
+        //         return (elem.target[commandIndex] === command &&
+        //             elem.target[groupIndex] === groupId)
+        //     } else {
+        //         return (elem.target[commandIndex] === command &&
+        //             elem.target[userIndex] === userId)
+        //     }
+        // }
     });
     if (filter.length > 0) {
         const returnData = {}
         filter[0].target.forEach((e, i) => {
             returnData[titleList[i]] = e
         })
+        returnData.permission = permission;
         returnData.index = filter[0].index;
         return returnData;
     } else {
@@ -263,9 +289,10 @@ Sheet.searchCommand = (command, type = '', userId, groupId) => {
  * 查詢對象可用指令
  * @param userId
  * @param groupId
+ * @param permission
  * @return {*[]}
  */
-Sheet.searchCanUseCommand = (userId, groupId) => {
+Sheet.searchCanUseCommand = (userId, groupId, permission) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
     const newData = allData.map((target, index) => ({target, index}));
@@ -287,7 +314,7 @@ Sheet.searchCanUseCommand = (userId, groupId) => {
             const returnObject = {}
             fer.target.forEach((e, i) => {
                 if (returnObject[titleList[i]] === Sheet.Dictionary.COMMAND ||
-                    returnObject[titleList[i]] === Sheet.Dictionary.type ||
+                    returnObject[titleList[i]] === Sheet.Dictionary.TYPE ||
                     returnObject[titleList[i]] === Sheet.Dictionary.TAG) {
                     returnObject[titleList[i]] = e
                 }
@@ -349,16 +376,17 @@ Sheet.searchTagData = (tag, userId, groupId) => {
  * @param info 指令的內容
  * @param userId 使用者id
  * @param groupId 群組id
+ * @param permission 權限
  * @return {String}
  */
-Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
+Sheet.appendCommand = (command, type, tag, info, userId, groupId, permission) => {
     // ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
-    if (groupId !== '') {
-        tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]);
-    } else {
-        tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), userId, groupId, '', true.toString()]);
-    }
+    // if (groupId !== '') {
+    //     tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), '', groupId, permission, '', true.toString()]);
+    // } else {
+        tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', true.toString()]);
+    // }
     const checkFormula = `${Command._trySymbol}=`
     return `新增指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`
 }
@@ -372,15 +400,16 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId) => {
  * @param index 第幾個index
  * @param userId userId
  * @param groupId groupId
+ * @param permission 權限
  * @return {String}
  */
-Sheet.editCommand = (command, type, tag, info, index, userId, groupId) => {
+Sheet.editCommand = (command, type, tag, info, index, userId, groupId, permission) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
-    if (groupId !== '') {
-        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]])
-    } else {
-        tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, '', true.toString()]])
-    }
+    // if (groupId !== '') {
+    //     tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]])
+    // } else {
+    tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', true.toString()]])
+    // }
     const checkFormula = `${Command._trySymbol}=`
     return `修改指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`;
 }

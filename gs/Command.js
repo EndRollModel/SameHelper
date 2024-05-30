@@ -4,14 +4,17 @@ const Command = {};
 Command._commandDely = 30 * 1000;
 
 // 常用符號作為指令
+// (群組中共用指令碼 僅限定群組或個人)(指令查詢時 僅只有群組或個人)
 Command._globalCommand = [
     '#', '＃',
 ]
-// 單人指令符號(群組中個人指令)
+// 群組個人指令符號
+// (群組中個人指令 寫入時必須在群組內)(指令查詢時 必須擁有群組與個人)
 Command._groupSymbolCommand = [
     '!', '！',
 ]
 // 個人跨域全域指令
+// (寫入時 僅寫入使用者 無論在哪)(指令查詢時 必須僅查詢個人)
 Command._personalSymbolCommand = [
     '~', '～'
 ]
@@ -64,17 +67,40 @@ Command.commandTypeList = {
     ERROR: 'error',
     SEARCH: 'search',
 }
-Command._permissionTypeList = {
+Command.permissionTypeList = {
     global: 'global',
     group: 'group',
     persona : 'persona',
 }
 
-// 確認指令需求
-Command._commandTypeCheck = (text) => {
+/**
+ * 確認身份權限
+ * @private
+ */
+Command._permissionCheck = (text) => {
+    const firstChar = text.trim()[0];
+    switch (true){
+        case Command._globalCommand.some((e)=> e === firstChar):
+            return Command.permissionTypeList.global;
+        case Command._groupSymbolCommand.some((e)=> e === firstChar):
+            return Command.permissionTypeList.group;
+        case Command._personalSymbolCommand.some((e)=> e === firstChar):
+            return Command.permissionTypeList.persona;
+    }
+    return '';
+}
+
+/**
+ * 列入所有指令的動作事件
+ * @param text
+ * @return {*|string}
+ * @private
+ */
+Command._commandActionCheck = (text) => {
+    const allSymbol = Command._globalCommand.concat(Command._groupSymbolCommand, Command._personalSymbolCommand);
     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
     const firstCommand = text.split(commandReg)[0].trim();
-    const isSymCommand = Command._globalCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
+    const isSymCommand = allSymbol.some((e) => e === firstCommand[0]); // 取得第一位判定
     const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1).toLowerCase()) // 去掉第一位 必須完全符合
     if (isSymCommand && isSysCommand) {
         const commandText = firstCommand.substring(1);
@@ -102,6 +128,43 @@ Command._commandTypeCheck = (text) => {
     }
 }
 
+// /**
+//  * 確認指令的種類
+//  * @param text
+//  * @return {*|string}
+//  * @private
+//  */
+// Command._commandTypeCheck = (text) => {
+//     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
+//     const firstCommand = text.split(commandReg)[0].trim();
+//     const isSymCommand = Command._globalCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
+//     const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1).toLowerCase()) // 去掉第一位 必須完全符合
+//     if (isSymCommand && isSysCommand) {
+//         const commandText = firstCommand.substring(1);
+//         const commandType = Command._actionList.find((e) => e.keyword.includes(commandText))
+//         return commandType.type
+//     } else {
+//         if (isSymCommand && !isSysCommand) {
+//             // 判定是否為抽選 否則為自訂
+//             const randomCheck = new RegExp(Command._randomSplitSymbol.join('|'), 'g');
+//             const randomMatch = text.match(randomCheck);
+//             const keyword = Command._actionList[Command._actionList.findIndex((e) => e.type === Command.commandTypeList.RANDOM)].keyword[0];
+//             if (randomMatch != null) {
+//                 if (text.startsWith(`${text[0]}${keyword}${randomMatch[0]}`)) {
+//                     return Command.commandTypeList.RANDOM;
+//                 } else {
+//                     return Command.commandTypeList.CUSTOM;
+//                 }
+//             } else {
+//                 return Command.commandTypeList.CUSTOM;
+//             }
+//         } else {
+//             // 完全沒有符合內容
+//             return Command.commandTypeList.NOPE;
+//         }
+//     }
+// }
+
 
 /**
  * 新增刪除修改
@@ -109,17 +172,20 @@ Command._commandTypeCheck = (text) => {
  */
 // 文字指令的需求
 Command.textHandle = (text) => {
-    const type = Command._commandTypeCheck(text);
+    // const actionType = Command._commandTypeCheck(text)
+    const permissionType = Command._permissionCheck(text);
+    const actionType = Command._commandActionCheck(text);
     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
     const action = {};
-    action.type = type; // 種類
+    action.type = actionType; // 種類
     action.command = ''; // 指令
     action.commandType = ''; // public | single
     action.info = ''; // 文字的內容
     action.tag = ''; // 標籤
     action.msg = ''; // 如果需要回傳訊息
     action.msgType = ''; // 訊息種類
-    switch (type) {
+    action.permission = permissionType; // 訊息權限
+    switch (actionType) {
         case Command.commandTypeList.HELP:
             action.type = Command.commandTypeList.HELP;
             // 依據群組或是個人拉取指令內容
@@ -150,6 +216,7 @@ Command.textHandle = (text) => {
                         action.type = Command.commandTypeList.NOPE;
                         action.msg = `無法使用指令新增指令!`
                     } else {
+                        // 避免開頭為=變成指令(注入)
                         if (addCommand.startsWith('=')) {
                             addCommand = Command._trySymbol + addCommand;
                         }
