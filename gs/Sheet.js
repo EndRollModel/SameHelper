@@ -11,13 +11,11 @@ Sheet._tempDelayTime = 30 * 1000;
 
 // 指令表的內容
 Sheet._commandTabList = [
-    {name: 'command', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
     {
-        name: 'singleCommand',
+        name: 'command',
         title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'permission', 'history', 'status']
     }, //
-    {name: 'personCommand', title: ['command', 'type', 'tag', 'info', 'userId', 'groupId', 'history', 'status']}, //
-    {name: 'temp', title: ['command', 'tag', 'date', 'userId', 'groupId', 'status']}, //
+    {name: 'temp', title: ['command', 'tag', 'date', 'userId', 'groupId', 'permission', 'status']}, //
     {name: 'recordKey', title: ['keyword', 'userId', 'groupId', 'status']},
     {name: 'chatRecord', title: ['chat', 'date', 'userId', 'groupId']},
     {name: 'users', title: ['userId', 'userName', 'status']},
@@ -150,7 +148,7 @@ Sheet.searchTemp = (command, date, userId, groupId, permission) => {
     const titleList = newData[0].target;
     const filter = newData.filter((e) => {
         const commandIndex = titleList.findIndex((e) => e === Sheet.Dictionary.COMMAND)
-        const permissionIndex = titleList.findIndex((e)=> e === Sheet.Dictionary.PERMISSION);
+        const permissionIndex = titleList.findIndex((e) => e === Sheet.Dictionary.PERMISSION);
         const dateIndex = titleList.findIndex((e) => e === Sheet.Dictionary.DATE);
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
@@ -385,7 +383,7 @@ Sheet.appendCommand = (command, type, tag, info, userId, groupId, permission) =>
     // if (groupId !== '') {
     //     tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), '', groupId, permission, '', true.toString()]);
     // } else {
-        tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', true.toString()]);
+    tabPage.appendRow([command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', true.toString()]);
     // }
     const checkFormula = `${Command._trySymbol}=`
     return `新增指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`
