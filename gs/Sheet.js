@@ -154,20 +154,48 @@ Sheet.searchTemp = (command, date, userId, groupId, permission) => {
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
         if (command === '') {
             // 圖片上傳的時候要檢查這裡 確認上傳者與群組一致 並且時間小於時限
+            // return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
             return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
         } else {
-            // 一般檢查用的 一定會有指令
-            if (groupId !== '') {
-                // 如果是群組上傳的 主要檢查群組的內容
-                return e.target[commandIndex] === command &&
-                    parseFloat(e.target[dateIndex]) > date &&
-                    e.target[groupIndex] === groupId
-            } else {
-                // 如果為使用者上傳的 僅檢查上傳者
-                return e.target[commandIndex] === command &&
-                    parseFloat(e.target[dateIndex]) > date &&
-                    e.target[userIndex] === userId
+            switch (permission) {
+                case Command.permissionTypeList.global:
+                    if (groupId === '') {
+                        return e.target[commandIndex] === command &&
+                            e.target[permissionIndex] === permissionIndex &&
+                            parseFloat(e.target[dateIndex]) > date &&
+                            e.target[userIndex] === userId &&
+                            e.target[groupIndex] === '';
+                    } else {
+                        return e.target[commandIndex] === command &&
+                            e.target[permissionIndex] === permissionIndex &&
+                            parseFloat(e.target[dateIndex]) > date &&
+                            e.target[groupIndex] === groupId;
+                    }
+                case Command.permissionTypeList.group:
+                    return e.target[commandIndex] === command &&
+                        e.target[permissionIndex] === permissionIndex &&
+                        parseFloat(e.target[dateIndex]) > date &&
+                        e.target[groupIndex] === groupId &&
+                        e.target[userIndex] === userId;
+
+                case Command.permissionTypeList.persona:
+                    return e.target[commandIndex] === command &&
+                        e.target[permissionIndex] === permissionIndex &&
+                        parseFloat(e.target[dateIndex]) > date &&
+                        e.target[userIndex] === userId;
             }
+            // 一般檢查用的 一定會有指令
+            // if (groupId !== '') {
+            //     // 如果是群組上傳的 主要檢查群組的內容
+            //     return e.target[commandIndex] === command &&
+            //         parseFloat(e.target[dateIndex]) > date &&
+            //         e.target[groupIndex] === groupId
+            // } else {
+            //     // 如果為使用者上傳的 僅檢查上傳者
+            //     return e.target[commandIndex] === command &&
+            //         parseFloat(e.target[dateIndex]) > date &&
+            //         e.target[userIndex] === userId
+            // }
         }
     });
     if (filter.length > 0) {
@@ -237,15 +265,26 @@ Sheet.searchCommand = (command, type = '', userId, groupId, permission) => {
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
         switch (permission) {
             case Command.permissionTypeList.global: // 群組通用指令
-                return (elem.target[commandIndex] === command &&
-                    elem.target[permissionIndex] === permission &&
-                    (elem.target[groupIndex] === groupId || elem.target[userIndex] === userId));
-            case Command.permissionTypeList.group: // 群組中個人指令 全部都一樣才回傳
+                if (groupId === '') {
+                    // 如果對象為單一使用者 則僅限於該人的指令
+                    return elem.target[commandIndex] === command &&
+                        elem.target[permissionIndex] === permission &&
+                        elem.target[userIndex] === userId &&
+                        elem.target[groupIndex] === '';
+                } else {
+                    // 如對象有群組 則為群組的共用指令
+                    return elem.target[commandIndex] === command &&
+                        elem.target[permissionIndex] === permission &&
+                        elem.target[groupIndex] === groupId
+                }
+            case Command.permissionTypeList.group:
+                // 群組中個人指令 全部都一樣才回傳
                 return elem.target[commandIndex] === command &&
                     elem.target[permissionIndex] === permission &&
                     elem.target[groupIndex] === groupId &&
                     elem.target[userIndex] === userId;
-            case Command.permissionTypeList.persona: // 個人專用個人指令 必須為空
+            case Command.permissionTypeList.persona:
+                // 個人專用個人指令 不管他在哪裡新增 對象只會有權限跟使用者相同 即使有groupId的值
                 return elem.target[commandIndex] === command &&
                     elem.target[permissionIndex] === permission &&
                     elem.target[userIndex] === userId;

@@ -320,7 +320,8 @@ Command.textHandle = (text) => {
             const commands = text.split(commandReg);
             switch (true) {// 格式 <action>
                 case commands.length === 1:
-                    const reg = new RegExp(Command._globalCommand.join('|'));
+                    const allSymbol = Command._globalCommand.concat(Command._groupSymbolCommand, Command._personalSymbolCommand)
+                    const reg = new RegExp(allSymbol.join('|'));
                     action.command = commands[0].startsWith('=') ? Command._trySymbol + commands[0].replace(reg, '').trim() : commands[0].replace(reg, '').trim();
                     break;
                 default : // 自訂並且大於數量
