@@ -152,6 +152,7 @@ Sheet.searchTemp = (command, date, userId, groupId, permission) => {
         const dateIndex = titleList.findIndex((e) => e === Sheet.Dictionary.DATE);
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID)
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        const statusIndex = titleList.findIndex((e) => e === Sheet.Dictionary.STATUS);
         if (command === '') {
             // 圖片上傳的時候要檢查這裡 確認上傳者與群組一致 並且時間小於時限
             // return parseFloat(e.target[dateIndex]) > date && e.target[userIndex] === userId && e.target[groupIndex] === groupId
@@ -164,25 +165,29 @@ Sheet.searchTemp = (command, date, userId, groupId, permission) => {
                             e.target[permissionIndex] === permissionIndex &&
                             parseFloat(e.target[dateIndex]) > date &&
                             e.target[userIndex] === userId &&
-                            e.target[groupIndex] === '';
+                            e.target[groupIndex] === '' &&
+                            e.target[statusIndex] === true.toString();
                     } else {
                         return e.target[commandIndex] === command &&
                             e.target[permissionIndex] === permissionIndex &&
                             parseFloat(e.target[dateIndex]) > date &&
-                            e.target[groupIndex] === groupId;
+                            e.target[groupIndex] === groupId &&
+                            e.target[statusIndex] === true.toString();
                     }
                 case Command.permissionTypeList.group:
                     return e.target[commandIndex] === command &&
                         e.target[permissionIndex] === permissionIndex &&
                         parseFloat(e.target[dateIndex]) > date &&
                         e.target[groupIndex] === groupId &&
-                        e.target[userIndex] === userId;
+                        e.target[userIndex] === userId &&
+                        e.target[statusIndex] === true.toString();
 
                 case Command.permissionTypeList.persona:
                     return e.target[commandIndex] === command &&
                         e.target[permissionIndex] === permissionIndex &&
                         parseFloat(e.target[dateIndex]) > date &&
-                        e.target[userIndex] === userId;
+                        e.target[userIndex] === userId &&
+                        e.target[statusIndex] === true.toString();
             }
             // 一般檢查用的 一定會有指令
             // if (groupId !== '') {
@@ -263,6 +268,7 @@ Sheet.searchCommand = (command, type = '', userId, groupId, permission) => {
         const typeIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TYPE);
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        const statusIndex = titleList.findIndex((e) => e === Sheet.Dictionary.STATUS);
         switch (permission) {
             case Command.permissionTypeList.global: // 群組通用指令
                 if (groupId === '') {
@@ -270,24 +276,28 @@ Sheet.searchCommand = (command, type = '', userId, groupId, permission) => {
                     return elem.target[commandIndex] === command &&
                         elem.target[permissionIndex] === permission &&
                         elem.target[userIndex] === userId &&
-                        elem.target[groupIndex] === '';
+                        elem.target[groupIndex] === '' &&
+                        elem.target[statusIndex] === true.toString();
                 } else {
                     // 如對象有群組 則為群組的共用指令
                     return elem.target[commandIndex] === command &&
                         elem.target[permissionIndex] === permission &&
-                        elem.target[groupIndex] === groupId
+                        elem.target[groupIndex] === groupId &&
+                        elem.target[statusIndex] === true.toString();
                 }
             case Command.permissionTypeList.group:
                 // 群組中個人指令 全部都一樣才回傳
                 return elem.target[commandIndex] === command &&
                     elem.target[permissionIndex] === permission &&
                     elem.target[groupIndex] === groupId &&
-                    elem.target[userIndex] === userId;
+                    elem.target[userIndex] === userId &&
+                    elem.target[statusIndex] === true.toString();
             case Command.permissionTypeList.persona:
                 // 個人專用個人指令 不管他在哪裡新增 對象只會有權限跟使用者相同 即使有groupId的值
                 return elem.target[commandIndex] === command &&
                     elem.target[permissionIndex] === permission &&
-                    elem.target[userIndex] === userId;
+                    elem.target[userIndex] === userId &&
+                    elem.target[statusIndex] === true.toString();
         }
         // if (type === '' || type === null) {
         //     // type為空時 為custom指令 僅搜尋來源指令與上傳者
@@ -446,6 +456,30 @@ Sheet.editCommand = (command, type, tag, info, index, userId, groupId, permissio
     //     tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]])
     // } else {
     tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', true.toString()]])
+    // }
+    const checkFormula = `${Command._trySymbol}=`
+    return `修改指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`;
+}
+
+
+/**
+ * 修改指令
+ * @param command 指令名稱
+ * @param type 種類
+ * @param tag tag:如果有的畫
+ * @param info 內容
+ * @param index 第幾個index
+ * @param userId userId
+ * @param groupId groupId
+ * @param permission 權限
+ * @return {String}
+ */
+Sheet.editCommandClose = (command, type, tag, info, index, userId, groupId, permission) => {
+    const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
+    // if (groupId !== '') {
+    //     tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), '', groupId, '', true.toString()]])
+    // } else {
+    tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', false.toString()]])
     // }
     const checkFormula = `${Command._trySymbol}=`
     return `修改指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`;

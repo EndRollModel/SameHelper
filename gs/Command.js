@@ -11,7 +11,7 @@ Command._globalCommand = [
 // 群組個人指令符號
 // (群組中個人指令 寫入時必須在群組內)(指令查詢時 必須擁有群組與個人)
 Command._groupSymbolCommand = [
-    '!', '！',
+    // '/', '／',
 ]
 // 個人跨域全域指令
 // (寫入時 僅寫入使用者 無論在哪)(指令查詢時 必須僅查詢個人)
@@ -128,44 +128,6 @@ Command._commandActionCheck = (text) => {
     }
 }
 
-// /**
-//  * 確認指令的種類
-//  * @param text
-//  * @return {*|string}
-//  * @private
-//  */
-// Command._commandTypeCheck = (text) => {
-//     const commandReg = new RegExp(Command._spiltSymbol.join('|'), 'g');
-//     const firstCommand = text.split(commandReg)[0].trim();
-//     const isSymCommand = Command._globalCommand.some((e) => e === firstCommand[0]); // 取得第一位判定
-//     const isSysCommand = Command._systemCommand.some((e) => e === firstCommand.substring(1).toLowerCase()) // 去掉第一位 必須完全符合
-//     if (isSymCommand && isSysCommand) {
-//         const commandText = firstCommand.substring(1);
-//         const commandType = Command._actionList.find((e) => e.keyword.includes(commandText))
-//         return commandType.type
-//     } else {
-//         if (isSymCommand && !isSysCommand) {
-//             // 判定是否為抽選 否則為自訂
-//             const randomCheck = new RegExp(Command._randomSplitSymbol.join('|'), 'g');
-//             const randomMatch = text.match(randomCheck);
-//             const keyword = Command._actionList[Command._actionList.findIndex((e) => e.type === Command.commandTypeList.RANDOM)].keyword[0];
-//             if (randomMatch != null) {
-//                 if (text.startsWith(`${text[0]}${keyword}${randomMatch[0]}`)) {
-//                     return Command.commandTypeList.RANDOM;
-//                 } else {
-//                     return Command.commandTypeList.CUSTOM;
-//                 }
-//             } else {
-//                 return Command.commandTypeList.CUSTOM;
-//             }
-//         } else {
-//             // 完全沒有符合內容
-//             return Command.commandTypeList.NOPE;
-//         }
-//     }
-// }
-
-
 /**
  * 新增刪除修改
  * @param text
@@ -188,13 +150,17 @@ Command.textHandle = (text) => {
     switch (actionType) {
         case Command.commandTypeList.HELP:
             action.type = Command.commandTypeList.HELP;
+            const allSymbol = Command._globalCommand.concat(Command._groupSymbolCommand, Command._personalSymbolCommand);
             // 依據群組或是個人拉取指令內容
-            action.msg = `本機器人可使用以下符號觸發指令\n[${Command._globalCommand.join('與')}]\n`
+            action.msg = `本機器人可使用以下符號觸發指令\t\n`
+            action.msg = `符號：${Command._globalCommand.join('與')} 作用範圍：群組或是個人共用指令 新增後 若在群組中則所有人都可呼叫該指令\t\n`
+            action.msg = `符號：${Command._personalSymbolCommand.join('與')} 作用範圍：個人的專用指令 僅新增的使用者 在任何地方可呼叫\t\n`
+            // action.msg = `本機器人可使用以下符號觸發指令\n[${allSymbol.join('與')}]\n`
             action.msg += `指令內容\n---------\n`
-            action.msg += `新增指令：\n格式：#新增,(指令名稱),(指令內容)\n範例：#新增,yt,youtube(;)com\n說明：呼叫指令時#yt即可讓機器人回傳\n---------\n`;
-            action.msg += `上傳指令：\n格式：#上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立\ntag則是供分類使用\n圖片上傳限制：\n3mb以下並且不能為動圖\n---------\n`;
+            action.msg += `新增指令：\n格式：(符號)新增,(指令名稱),(指令內容)\n範例：#新增,yt,youtube(;)com\n說明：呼叫指令時#yt即可讓機器人回傳\n---------\n`;
+            action.msg += `上傳指令：\n格式：(符號)上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立\ntag則是供分類使用\n圖片上傳限制：\n3mb以下並且不能為動圖\n---------\n`;
             action.msg += `抽選指令：\n格式：#抽,(tag) 或 #抽;(1,2,3,4,5)\n範例：文字抽選 #抽;(麥當勞,肯德基,頂呱呱,丹丹)\n說明：抽選Tag時可直接抽選圖片的內容 後者可自訂文字內容抽選(使用逗號作為分隔符號即可)\n---------\n`;
-            action.msg += `查詢指令：\n格式：#查詢 \n說明：回傳已新增的所有自定義指令\n---------\n`;
+            action.msg += `查詢指令：\n格式：(符號)查詢 \n說明：回傳已新增的所有自定義指令\n---------\n`;
             break;
         case Command.commandTypeList.SEARCH:
             break;
@@ -229,12 +195,12 @@ Command.textHandle = (text) => {
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `若要新增指令:\n格式:#新增,(指令名稱),(指令內容)`
+                    action.msg = `若要新增指令:\n格式:新增,(指令名稱),(指令內容)`
                     break
                 default:
                 case commands.length === 2:
                     action.type = Command.commandTypeList.NOPE;
-                    action.msg = `指令中缺少必要的內容\n格式:#新增,(指令名稱),(指令內容)`
+                    action.msg = `指令中缺少必要的內容\n格式:新增,(指令名稱),(指令內容)`
                     break;
             }
             break;
@@ -244,21 +210,21 @@ Command.textHandle = (text) => {
         }
         case Command.commandTypeList.DEL: {
             const commands = text.split(commandReg);
-            // switch (true){ // 格式 <action> <command>
-            //     case commands.length > 2:
-            //         action.type = Command.commandTypeList.NOPE;
-            //         action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
-            //         break;
-            //     case commands.length === 2:
-            //         action.info = commands[1].trim();
-            //         break;
-            //     case commands.length === 1:
-            //         action.type = Command.commandTypeList.NOPE;
-            //         action.msg = `指令中缺少必要的內容\n格式:#刪除,(指令名稱)`;
-            //         break;
-            //     default:
-            //         break;
-            // }
+            switch (true){ // 格式 <action> <command>
+                case commands.length > 2:
+                    action.type = Command.commandTypeList.NOPE;
+                    action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
+                    break;
+                case commands.length === 2:
+                    action.info = commands[1].trim();
+                    break;
+                case commands.length === 1:
+                    action.type = Command.commandTypeList.NOPE;
+                    action.msg = `指令中缺少必要的內容\n格式:#刪除,(指令名稱)`;
+                    break;
+                default:
+                    break;
+            }
             break;
         }
         case Command.commandTypeList.UPLOAD: {

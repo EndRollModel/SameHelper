@@ -39,17 +39,17 @@ Line._joinHandle = (event) => {
 }
 Line._leaveHandle = (event) => {
     // 離開群組時紀錄
-    Sheet.writeRecord(event.type, {id: event.source.groupId})
+    Sheet.writeRecord(event.type, {id: event.source.groupId});
 }
 Line._followHandle = (event) => {
     // 加入好友時紀錄
     const userInfo = Line.getUserInfo(event);
-    Sheet.writeRecord(event.type, {id: event.source.userId, name: userInfo.displayName})
+    Sheet.writeRecord(event.type, {id: event.source.userId, name: userInfo.displayName});
     // Line._replyMsg(event, Line._textStyleBody())
 }
 Line._unfollowHandle = (event) => {
     // 被封鎖時紀錄
-    Sheet.writeRecord(event.type, {id: event.source.userId})
+    Sheet.writeRecord(event.type, {id: event.source.userId});
 }
 
 
@@ -73,6 +73,10 @@ Line._messageHandle = (event) => {
     }
 }
 
+/**
+ * 文字訊息處理
+ * @param event
+ */
 Line._textMessageHandle = (event) => {
     // 直接判斷邏輯了
     const msgInfo = Command.textHandle(event.message.text);
@@ -82,22 +86,7 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.HELP: // 說明
             break;
         case Command.commandTypeList.SEARCH:
-            const searchCommands = Sheet.searchCanUseCommand(userId, groupId, msgInfo.permission);
-            if (searchCommands.length > 0) {
-                msgInfo.msg = groupId === '' ? `此群組可用自訂指令為：\n` : '使用者已建立的指令為：\n'
-                searchCommands.forEach((e, i) => {
-                    if (e.tag !== '') {
-                        msgInfo.msg += `名稱：${e.command}\t Tag: ${e.tag}`;
-                    } else {
-                        msgInfo.msg += `名稱：${e.command}`;
-                    }
-                    if (i !== searchCommands.length - 1) {
-                        msgInfo.msg += '\n'
-                    }
-                })
-            } else {
-                msgInfo.msg = groupId === '' ? `使用者還未建立任何可用指令` : `此群組尚未建立任何可用指令`
-            }
+            msgInfo.info = Line._searchAction(userId, groupId, msgInfo.permission);
             break;
         case Command.commandTypeList.ADD:
         case Command.commandTypeList.MEMO: {// 合併但其實不使用
@@ -117,25 +106,29 @@ Line._textMessageHandle = (event) => {
             const checkRepeat = Sheet.searchTemp(msgInfo.command, Date.now(), userId, groupId, msgInfo.permission);
             if (Object.hasOwn(checkRepeat, 'command')) {
                 // 如果重複了
-                msgInfo.msg = `目前已經重複的指令 [${msgInfo.command}]，等待上傳中`
+                msgInfo.msg = `目前已經重複的指令 [${msgInfo.command}]，等待上傳中`;
             } else {
                 // 沒有指令 建立
                 msgInfo.msg = Sheet.appendTemp(msgInfo.command, msgInfo.tag, Date.now(), userId, groupId, msgInfo.permission);
             }
             break;
         }
-        case Command.commandTypeList.EDIT: // 編輯(棄用)
-            break;
         case Command.commandTypeList.DEL: // 刪除
+            const checkExist = Sheet.searchCommand(msgInfo.command, '', userId, groupId, msgInfo.permission);
+            if (Object.hasOwn(checkExist, 'info')) {
+                msgInfo.msg = Sheet.editCommandClose(msgInfo.command, checkExist.type, checkExist.tag, checkExist.info, checkExist.index, checkExist.userId, checkExist.groupId, checkExist.permission);
+            } else {
+                msgInfo.msg = `沒有此指令可供刪除`;
+            }
             break;
         case Command.commandTypeList.RANDOM: // 抽
             if (msgInfo.tag !== '') { // 空值會成立
                 const getTagData = Sheet.searchTagData(msgInfo.tag, userId, groupId);
                 if (getTagData.length > 0) {
-                    msgInfo.msgType = 'image'
+                    msgInfo.msgType = 'image';
                     msgInfo.msg = getTagData[Math.floor(getTagData.length * Math.random())].info;
                 } else {
-                    msgInfo.msg = '沒有該Tag的資料!'
+                    msgInfo.msg = '沒有該Tag的資料!';
                 }
             }
             break;
@@ -148,7 +141,7 @@ Line._textMessageHandle = (event) => {
                 msgInfo.msg = commandList.info;
                 msgInfo.msgType = commandList.type;
             } else {
-                msgInfo.msg = `沒有此指令!`
+                msgInfo.msg = `沒有此指令!`;
             }
             break;
         case Command.commandTypeList.RECORD: // 紀錄 目前先不寫功能
@@ -158,13 +151,17 @@ Line._textMessageHandle = (event) => {
     }
     if (msgInfo.msg !== '') {
         if (msgInfo.msgType === 'image') {
-            return Line._replyMsg(event, Line._imageStyleBody(msgInfo.msg))
+            return Line._replyMsg(event, Line._imageStyleBody(msgInfo.msg));
         } else {
             return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg));
         }
     }
 }
 
+/**
+ * 圖片訊息處理
+ * @param event
+ */
 Line._imageMessageHandle = (event) => {
     const msgInfo = {}
     // 傳送圖片若是符合上傳條件才上傳 所以先搜尋上傳條件temp表 並且要搜尋groupId
@@ -192,6 +189,49 @@ Line._imageMessageHandle = (event) => {
     }
 }
 
+
+/**
+ * 查詢訊息的回覆
+ * @param userId
+ * @param groupId
+ * @param permission
+ */
+Line._searchAction = (userId, groupId, permission) => {
+    let returnMsg = ''
+    let commandMsg = '';
+    // const searchCommands = Sheet.searchCanUseCommand(userId, groupId, permission);
+    const searchCommands = Sheet.searchCommand(userId, groupId, permission);
+    if (searchCommands.length > 0) {
+        searchCommands.forEach((e, i) => {
+            commandMsg += (e.tag !== '') ? `名稱：${e.command}\t Tag: ${e.tag}` : `名稱：${e.command}`;
+        });
+        switch (permission) {
+            case Command.permissionTypeList.global:
+                returnMsg = groupId !== '' ? `此群組共用指令為：\n${commandMsg}` : `此一對一對話可用共通指令為：${commandMsg}`;
+                break;
+            case Command.permissionTypeList.group:
+                returnMsg = groupId !== '' ? `此群組該使用者可用指令為：\n${commandMsg}` : `非群組指令不使用！`;
+                break;
+            case Command.permissionTypeList.persona:
+                returnMsg = groupId !== '' ? `使用者的個人指令為：\n${commandMsg}` : `個人指令請一對一查詢！`;
+                break;
+        }
+        // returnMsg = groupId === '' ? `此群組可用自訂指令為：\n` : '使用者已建立的指令為：\n'
+        // searchCommands.forEach((e, i) => {
+        //     if (e.tag !== '') {
+        //         returnMsg += `名稱：${e.command}\t Tag: ${e.tag}`;
+        //     } else {
+        //         returnMsg += `名稱：${e.command}`;
+        //     }
+        //     if (i !== searchCommands.length - 1) {
+        //         returnMsg += '\n'
+        //     }
+        // })
+    } else {
+        returnMsg = groupId === '' ? `您還未建立任何可用指令` : `此群組尚未建立任何可用指令`
+    }
+    return returnMsg;
+}
 
 /****************
  *    MsgType   *
@@ -222,21 +262,21 @@ Line._imageStyleBody = (imageUrl) => {
  *  join與follow事件的處理
  */
 Line.followEventFlexBody = (eventType) => {
-    if (eventType === 'join') {
-        // 群組
-    } else {
-        // 個人使用者
-    }
-    return{
+    // if (eventType === 'join') {
+    //     // 群組
+    // } else {
+    //     // 個人使用者
+    // }
+    return {
         type: 'text',
-        text: '歡迎使用本機器人，請使用/help了解更多使用方法'
+        text: '歡迎使用本機器人，請使用#help了解更多使用方法'
     }
 }
 
 /**
  * 用Flex去做旋轉木馬的卡片
  */
-Line.helpFlexEventBody = (...commands) =>{
+Line.helpFlexEventBody = (...commands) => {
 
 }
 
