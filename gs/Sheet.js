@@ -166,13 +166,13 @@ Sheet.searchTemp = (command, date, userId, groupId, permission) => {
                             parseFloat(e.target[dateIndex]) > date &&
                             e.target[userIndex] === userId &&
                             e.target[groupIndex] === '' &&
-                            e.target[statusIndex] === true.toString();
+                            e.target[statusIndex].toLowerCase() === true.toString();
                     } else {
                         return e.target[commandIndex] === command &&
                             e.target[permissionIndex] === permissionIndex &&
                             parseFloat(e.target[dateIndex]) > date &&
                             e.target[groupIndex] === groupId &&
-                            e.target[statusIndex] === true.toString();
+                            e.target[statusIndex].toLowerCase() === true.toString();
                     }
                 case Command.permissionTypeList.group:
                     return e.target[commandIndex] === command &&
@@ -180,14 +180,14 @@ Sheet.searchTemp = (command, date, userId, groupId, permission) => {
                         parseFloat(e.target[dateIndex]) > date &&
                         e.target[groupIndex] === groupId &&
                         e.target[userIndex] === userId &&
-                        e.target[statusIndex] === true.toString();
+                        e.target[statusIndex].toLowerCase() === true.toString();
 
                 case Command.permissionTypeList.persona:
                     return e.target[commandIndex] === command &&
                         e.target[permissionIndex] === permissionIndex &&
                         parseFloat(e.target[dateIndex]) > date &&
                         e.target[userIndex] === userId &&
-                        e.target[statusIndex] === true.toString();
+                        e.target[statusIndex].toLowerCase() === true.toString();
             }
             // 一般檢查用的 一定會有指令
             // if (groupId !== '') {
@@ -277,13 +277,13 @@ Sheet.searchCommand = (command, type = '', userId, groupId, permission) => {
                         elem.target[permissionIndex] === permission &&
                         elem.target[userIndex] === userId &&
                         elem.target[groupIndex] === '' &&
-                        elem.target[statusIndex] === true.toString();
+                        elem.target[statusIndex].toLowerCase() === true.toString();
                 } else {
                     // 如對象有群組 則為群組的共用指令
                     return elem.target[commandIndex] === command &&
                         elem.target[permissionIndex] === permission &&
                         elem.target[groupIndex] === groupId &&
-                        elem.target[statusIndex] === true.toString();
+                        elem.target[statusIndex].toLowerCase() === true.toString();
                 }
             case Command.permissionTypeList.group:
                 // 群組中個人指令 全部都一樣才回傳
@@ -291,13 +291,13 @@ Sheet.searchCommand = (command, type = '', userId, groupId, permission) => {
                     elem.target[permissionIndex] === permission &&
                     elem.target[groupIndex] === groupId &&
                     elem.target[userIndex] === userId &&
-                    elem.target[statusIndex] === true.toString();
+                    elem.target[statusIndex].toLowerCase() === true.toString();
             case Command.permissionTypeList.persona:
                 // 個人專用個人指令 不管他在哪裡新增 對象只會有權限跟使用者相同 即使有groupId的值
                 return elem.target[commandIndex] === command &&
                     elem.target[permissionIndex] === permission &&
                     elem.target[userIndex] === userId &&
-                    elem.target[statusIndex] === true.toString();
+                    elem.target[statusIndex].toLowerCase() === true.toString();
         }
         // if (type === '' || type === null) {
         //     // type為空時 為custom指令 僅搜尋來源指令與上傳者
@@ -347,22 +347,44 @@ Sheet.searchCanUseCommand = (userId, groupId, permission) => {
     const filter = newData.filter((elem) => {
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
+        const permissionIndex = titleList.findIndex((e) => e === Sheet.Dictionary.PERMISSION);
+        const statusIndex = titleList.findIndex((e) => e === Sheet.Dictionary.STATUS);
         // 新增指令時需要查詢是否有對應的種類內容
-        if (groupId !== '') {
-            return elem.target[groupIndex] === groupId
-        } else {
-            return elem.target[userIndex] === userId
+        switch (permission){
+            case Command.permissionTypeList.global:
+                if (groupId !== '') {
+                    return elem.target[groupIndex] === groupId &&
+                        elem.target[permissionIndex] === permission &&
+                        elem.target[statusIndex].toLowerCase() === true.toString();
+                    // return elem.target[groupIndex] === groupId
+                } else {
+                    return elem.target[userIndex] === userId &&
+                        elem.target[permissionIndex] === permission &&
+                        elem.target[statusIndex].toLowerCase() === true.toString()
+                    // return elem.target[userIndex] === userId
+                }
+            case Command.permissionTypeList.group:
+                return elem.target[userIndex] === userId &&
+                    elem.target[groupIndex] === groupId &&
+                    elem.target[permissionIndex] === permissionIndex &&
+                    elem.target[statusIndex].toLowerCase() === true.toString();
+                // break;
+            case Command.permissionTypeList.persona :
+                return elem.target[userIndex] === userId &&
+                    elem.target[permissionIndex] === permission &&
+                    elem.target[statusIndex].toLowerCase() === true.toString();
+            // break;
         }
     });
     if (filter.length > 0) {
         const returnData = []
         // {target : [], index : }
-        filter.forEach((fer) => {
+        filter.forEach((commandInfo) => {
             const returnObject = {}
-            fer.target.forEach((e, i) => {
-                if (returnObject[titleList[i]] === Sheet.Dictionary.COMMAND ||
-                    returnObject[titleList[i]] === Sheet.Dictionary.TYPE ||
-                    returnObject[titleList[i]] === Sheet.Dictionary.TAG) {
+            commandInfo.target.forEach((e, i) => {
+                if (titleList[i] === Sheet.Dictionary.COMMAND ||
+                    titleList[i] === Sheet.Dictionary.TYPE ||
+                    titleList[i] === Sheet.Dictionary.TAG) {
                     returnObject[titleList[i]] = e
                 }
             })
@@ -463,7 +485,7 @@ Sheet.editCommand = (command, type, tag, info, index, userId, groupId, permissio
 
 
 /**
- * 修改指令
+ * 刪除指令
  * @param command 指令名稱
  * @param type 種類
  * @param tag tag:如果有的畫
@@ -482,7 +504,7 @@ Sheet.editCommandClose = (command, type, tag, info, index, userId, groupId, perm
     tabPage.getRange(index + 1, 1, 1, tabPage.getLastColumn()).setValues([[command.toString(), type, tag.toString(), info.toString(), userId, groupId, permission, '', false.toString()]])
     // }
     const checkFormula = `${Command._trySymbol}=`
-    return `修改指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`;
+    return `刪除指令：[${command.startsWith(checkFormula) ? command.replace("'", '') : command}] 完成`;
 }
 
 

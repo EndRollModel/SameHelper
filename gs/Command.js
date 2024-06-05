@@ -216,7 +216,7 @@ Command.textHandle = (text) => {
                     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
                     break;
                 case commands.length === 2:
-                    action.info = commands[1].trim();
+                    action.command = commands[1].trim();
                     break;
                 case commands.length === 1:
                     action.type = Command.commandTypeList.NOPE;

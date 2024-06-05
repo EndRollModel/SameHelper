@@ -86,7 +86,7 @@ Line._textMessageHandle = (event) => {
         case Command.commandTypeList.HELP: // 說明
             break;
         case Command.commandTypeList.SEARCH:
-            msgInfo.info = Line._searchAction(userId, groupId, msgInfo.permission);
+            msgInfo.msg = Line._searchAction(userId, groupId, msgInfo.permission);
             break;
         case Command.commandTypeList.ADD:
         case Command.commandTypeList.MEMO: {// 合併但其實不使用
@@ -199,21 +199,21 @@ Line._imageMessageHandle = (event) => {
 Line._searchAction = (userId, groupId, permission) => {
     let returnMsg = ''
     let commandMsg = '';
-    // const searchCommands = Sheet.searchCanUseCommand(userId, groupId, permission);
-    const searchCommands = Sheet.searchCommand(userId, groupId, permission);
+    const searchCommands = Sheet.searchCanUseCommand(userId, groupId, permission);
+    // const searchCommands = Sheet.searchCommand(userId, groupId, permission);
     if (searchCommands.length > 0) {
         searchCommands.forEach((e, i) => {
-            commandMsg += (e.tag !== '') ? `名稱：${e.command}\t Tag: ${e.tag}` : `名稱：${e.command}`;
+            commandMsg += (e.tag !== '') ? `名稱：${e.command}\t Tag: ${e.tag}\n` : `名稱：${e.command}\n`;
         });
         switch (permission) {
             case Command.permissionTypeList.global:
-                returnMsg = groupId !== '' ? `此群組共用指令為：\n${commandMsg}` : `此一對一對話可用共通指令為：${commandMsg}`;
+                returnMsg = groupId !== '' ? `此群組共用指令為：\n${commandMsg}` : `此一對一對話可用共通指令為：\n${commandMsg}`;
                 break;
             case Command.permissionTypeList.group:
                 returnMsg = groupId !== '' ? `此群組該使用者可用指令為：\n${commandMsg}` : `非群組指令不使用！`;
                 break;
             case Command.permissionTypeList.persona:
-                returnMsg = groupId !== '' ? `使用者的個人指令為：\n${commandMsg}` : `個人指令請一對一查詢！`;
+                returnMsg = groupId !== '' ? `個人指令請一對一查詢！` : `使用者的個人指令為：\n${commandMsg}`;
                 break;
         }
         // returnMsg = groupId === '' ? `此群組可用自訂指令為：\n` : '使用者已建立的指令為：\n'
