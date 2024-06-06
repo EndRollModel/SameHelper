@@ -8,3 +8,17 @@ function doPost(e) {
         Sheet.writeDebugLog(e.message, e.stack)
     }
 }
+
+function doGet(e) {
+    switch (true){
+        case Object.hasOwn(e, 'token'):
+            // if(e.parameter.token)
+            break;
+        case Object.hasOwn(e, 'action'):
+            if (e.parameter.action === ''){
+            }
+            break;
+        default:
+            break;
+    }
+}

@@ -37,7 +37,8 @@ Command._systemCommand = [
     '抽', // 抽選<tag>
     '紀錄', 'record', //
     // '筆記', 'memo', '備忘', //備忘
-    '查詢', '指令', '可用'
+    '查詢', '指令', '可用',
+    '管理', 'board'
 ]
 
 Command._actionList = [
