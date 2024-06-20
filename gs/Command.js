@@ -3,6 +3,9 @@ const Command = {};
 
 Command._commandDely = 30 * 1000;
 
+// 訊息模板切割字元
+Command.splitSpaceSymbol = '\u200B';
+
 // 常用符號作為指令
 // (群組中共用指令碼 僅限定群組或個人)(指令查詢時 僅只有群組或個人)
 Command._globalCommand = [
@@ -154,10 +157,10 @@ Command.textHandle = (text) => {
             const allSymbol = Command._globalCommand.concat(Command._groupSymbolCommand, Command._personalSymbolCommand);
             // 依據群組或是個人拉取指令內容
             action.msg = `本機器人可使用以下符號觸發指令\t\n`
-            action.msg = `符號：${Command._globalCommand.join('與')} 作用範圍：群組或是個人共用指令 新增後 若在群組中則所有人都可呼叫該指令\t\n`
-            action.msg = `符號：${Command._personalSymbolCommand.join('與')} 作用範圍：個人的專用指令 僅新增的使用者 在任何地方可呼叫\t\n`
+            action.msg += `符號：${Command._globalCommand.join('與')} 作用範圍：群組或是個人共用指令 新增後 若在群組中則所有人都可呼叫該指令\t\n`
+            action.msg += `符號：${Command._personalSymbolCommand.join('與')} 作用範圍：個人的專用指令 僅新增的使用者 在任何地方可呼叫\t\n`
             // action.msg = `本機器人可使用以下符號觸發指令\n[${allSymbol.join('與')}]\n`
-            action.msg += `指令內容\n---------\n`
+            action.msg += `指令內容\n\u200B---------\u200B\n`
             action.msg += `新增指令：\n格式：(符號)新增,(指令名稱),(指令內容)\n範例：#新增,yt,youtube(;)com\n說明：呼叫指令時#yt即可讓機器人回傳\n---------\n`;
             action.msg += `上傳指令：\n格式：(符號)上傳,(指令名稱) 或 #上傳,(指令名稱),(tag)\n範例：#上傳,五十嵐,飲料\n說明：呼叫此指令完成後 會要求在一定時間內上傳圖片 指令才會建立\ntag則是供分類使用\n圖片上傳限制：\n3mb以下並且不能為動圖\n---------\n`;
             action.msg += `抽選指令：\n格式：#抽,(tag) 或 #抽;(1,2,3,4,5)\n範例：文字抽選 #抽;(麥當勞,肯德基,頂呱呱,丹丹)\n說明：抽選Tag時可直接抽選圖片的內容 後者可自訂文字內容抽選(使用逗號作為分隔符號即可)\n---------\n`;

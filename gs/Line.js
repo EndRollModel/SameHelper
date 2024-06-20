@@ -300,25 +300,35 @@ Line._getImageContent = (msgId) => {
  * 回傳訊息
  * @param events
  * @param {Object} body
- * @private
+ * @param {boolean} quote
+ * @description
+ * 回傳訊息用 但如果有QuoteToken則回傳該對象對話內容
  */
-Line._replyMsg = function (events, body) {
+Line._replyMsg = function (events, body, quote = true) {
     // 取出 replayToken 和發送的訊息文字
     const replyToken = events.replyToken;
+    const checkQuote = Object.hasOwn(events.message, 'quoteToken');
     if (typeof replyToken === 'undefined') {
         return;
     }
     const url = 'https://api.line.me/v2/bot/message/reply';
+    if (checkQuote) {
+        if (Array.isArray(body)) {
+            body[0].quoteToken = events.message.quoteToken;
+        } else {
+            body.quoteToken = events.message.quoteToken;
+        }
+    }
+    const payload = {};
+    payload.replyToken = replyToken;
+    payload.messages = Array.isArray(body) ? body : [body];
     UrlFetchApp.fetch(url, {
         'headers': {
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': `Bearer ${Config.lineToken}`
         },
         'method': 'post',
-        'payload': JSON.stringify({
-            'replyToken': replyToken,
-            'messages': Array.isArray(body) ? body : [body],
-        }),
+        'payload': JSON.stringify(payload),
     });
 }
 
