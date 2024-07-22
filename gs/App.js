@@ -9,16 +9,16 @@ function doPost(e) {
     }
 }
 
-function doGet(e) {
-    switch (true){
-        case Object.hasOwn(e, 'token'):
-            // if(e.parameter.token)
-            break;
-        case Object.hasOwn(e, 'action'):
-            if (e.parameter.action === ''){
-            }
-            break;
-        default:
-            break;
-    }
-}
+// function doGet(e) {
+//     switch (true){
+//         case Object.hasOwn(e, 'token'):
+//             // if(e.parameter.token)
+//             break;
+//         case Object.hasOwn(e, 'action'):
+//             if (e.parameter.action === ''){
+//             }
+//             break;
+//         default:
+//             break;
+//     }
+// }

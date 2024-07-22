@@ -123,7 +123,7 @@ Line._textMessageHandle = (event) => {
             break;
         case Command.commandTypeList.RANDOM: // 抽
             if (msgInfo.tag !== '') { // 空值會成立
-                const getTagData = Sheet.searchTagData(msgInfo.tag, userId, groupId);
+                const getTagData = Sheet.searchTagData(msgInfo.tag, userId, groupId, msgInfo.permission);
                 if (getTagData.length > 0) {
                     msgInfo.msgType = 'image';
                     msgInfo.msg = getTagData[Math.floor(getTagData.length * Math.random())].info;
@@ -313,10 +313,15 @@ Line._replyMsg = function (events, body, quote = true) {
     }
     const url = 'https://api.line.me/v2/bot/message/reply';
     if (checkQuote) {
+        // 僅text type回傳才用回覆 不然圖片會死
         if (Array.isArray(body)) {
-            body[0].quoteToken = events.message.quoteToken;
+            if (body[0].type === 'text') {
+                body[0].quoteToken = events.message.quoteToken;
+            }
         } else {
-            body.quoteToken = events.message.quoteToken;
+            if (body.type === 'text'){
+                body.quoteToken = events.message.quoteToken;
+            }
         }
     }
     const payload = {};

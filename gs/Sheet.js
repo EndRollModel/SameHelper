@@ -350,7 +350,7 @@ Sheet.searchCanUseCommand = (userId, groupId, permission) => {
         const permissionIndex = titleList.findIndex((e) => e === Sheet.Dictionary.PERMISSION);
         const statusIndex = titleList.findIndex((e) => e === Sheet.Dictionary.STATUS);
         // 新增指令時需要查詢是否有對應的種類內容
-        switch (permission){
+        switch (permission) {
             case Command.permissionTypeList.global:
                 if (groupId !== '') {
                     return elem.target[groupIndex] === groupId &&
@@ -368,7 +368,7 @@ Sheet.searchCanUseCommand = (userId, groupId, permission) => {
                     elem.target[groupIndex] === groupId &&
                     elem.target[permissionIndex] === permissionIndex &&
                     elem.target[statusIndex].toLowerCase() === true.toString();
-                // break;
+            // break;
             case Command.permissionTypeList.persona :
                 return elem.target[userIndex] === userId &&
                     elem.target[permissionIndex] === permission &&
@@ -401,9 +401,10 @@ Sheet.searchCanUseCommand = (userId, groupId, permission) => {
  * @param tag
  * @param userId
  * @param groupId
+ * @param permission
  * @return {{}}
  */
-Sheet.searchTagData = (tag, userId, groupId) => {
+Sheet.searchTagData = (tag, userId, groupId, permission) => {
     const tabPage = Sheet.getSheetTab(Sheet.commandSpreadSheet, Sheet.Dictionary.COMMAND);
     const allData = tabPage.getRange(1, 1, tabPage.getLastRow(), tabPage.getLastColumn()).getDisplayValues();
     const newData = allData.map((target, index) => ({target, index}));
@@ -412,13 +413,19 @@ Sheet.searchTagData = (tag, userId, groupId) => {
         const tagIndex = titleList.findIndex((e) => e === Sheet.Dictionary.TAG);
         const userIndex = titleList.findIndex((e) => e === Sheet.Dictionary.USERID);
         const groupIndex = titleList.findIndex((e) => e === Sheet.Dictionary.GROUPID);
-        // 新增指令時需要查詢是否有對應的種類內容
+        const statusIndex = titleList.findIndex((e) => e === Sheet.Dictionary.STATUS);
+        const permissionIndex = titleList.findIndex((e) => e === Sheet.Dictionary.PERMISSION);
+        // 搜尋時需要搜尋對象
         if (groupId !== '') {
             return (elem.target[tagIndex] === tag &&
-                elem.target[groupIndex] === groupId)
+                elem.target[groupIndex] === groupId &&
+                elem.target[permissionIndex] === permission &&
+                elem.target[statusIndex] === true.toString())
         } else {
             return (elem.target[tagIndex] === tag &&
-                elem.target[userIndex] === userId)
+                elem.target[userIndex] === userId &&
+                elem.target[permissionIndex] === permission &&
+                elem.target[statusIndex] === true.toString())
         }
     });
     if (filter.length > 0) {

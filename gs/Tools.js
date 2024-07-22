@@ -1,5 +1,6 @@
 const Tools = {}
 
+// SHA256無法對齊
 Tools.calculateSHA256 = (input) => {
     // 計算 SHA-256 哈希值
     let rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, input);
@@ -20,7 +21,6 @@ Tools.calculateSHA256 = (input) => {
     //     .join("");
     return hexString
 }
-
 
 // e270aeb347f2165574c3a5c5bf11d038bcd3acd5abfdb5ae8a1b52d91cb842f0
 // 807269743d6e1a0425c0cc987ec3eac6538146ae8bb18c9b946a5ada813a5f7f
