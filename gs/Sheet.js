@@ -366,7 +366,7 @@ Sheet.searchCanUseCommand = (userId, groupId, permission) => {
             case Command.permissionTypeList.group:
                 return elem.target[userIndex] === userId &&
                     elem.target[groupIndex] === groupId &&
-                    elem.target[permissionIndex] === permissionIndex &&
+                    elem.target[permissionIndex] === permission &&
                     elem.target[statusIndex].toLowerCase() === true.toString();
             // break;
             case Command.permissionTypeList.persona :
@@ -416,17 +416,32 @@ Sheet.searchTagData = (tag, userId, groupId, permission) => {
         const statusIndex = titleList.findIndex((e) => e === Sheet.Dictionary.STATUS);
         const permissionIndex = titleList.findIndex((e) => e === Sheet.Dictionary.PERMISSION);
         // 搜尋時需要搜尋對象
-        if (groupId !== '') {
-            return (elem.target[tagIndex] === tag &&
-                elem.target[groupIndex] === groupId &&
-                elem.target[permissionIndex] === permission &&
-                elem.target[statusIndex] === true.toString())
-        } else {
-            return (elem.target[tagIndex] === tag &&
-                elem.target[userIndex] === userId &&
-                elem.target[permissionIndex] === permission &&
-                elem.target[statusIndex] === true.toString())
+        switch (permission) {
+            case Command.permissionTypeList.global:
+                if (groupId !== '') {
+                    return (elem.target[tagIndex] === tag &&
+                        elem.target[groupIndex] === groupId &&
+                        elem.target[permissionIndex] === permission &&
+                        elem.target[statusIndex].toLowerCase() === true.toString())
+                } else {
+                    return (elem.target[tagIndex] === tag &&
+                        elem.target[userIndex] === userId &&
+                        elem.target[groupIndex] === '' &&
+                        elem.target[permissionIndex] === permission &&
+                        elem.target[statusIndex].toLowerCase() === true.toString())
+                }
+            case Command.permissionTypeList.group:
+                return (elem.target[tagIndex] === tag &&
+                    elem.target[groupIndex] === groupId &&
+                    elem.target[permissionIndex] === permission &&
+                    elem.target[statusIndex].toLowerCase() === true.toString())
+            case Command.permissionTypeList.persona:
+                return (elem.target[tagIndex] === tag &&
+                    elem.target[userIndex] === userId &&
+                    elem.target[permissionIndex] === permission &&
+                    elem.target[statusIndex].toLowerCase() === true.toString())
         }
+
     });
     if (filter.length > 0) {
         const returnData = []
