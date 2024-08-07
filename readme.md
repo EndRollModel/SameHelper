@@ -3,7 +3,7 @@
 使用google app script 與 firebase 製作 的 自建指令型Line bot
 
 取名來源：   
-![](https://raw.githubusercontent.com/EndRollModel/SameHelper/main/image/same.jpeg =250x)
+![](./image/same.jpeg)
 
 原本想使用某kea的鯊魚梗圖(隨便啦那張)作為取名靈感來源
 
