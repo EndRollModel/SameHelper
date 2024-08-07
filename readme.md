@@ -1,6 +1,15 @@
 ## 鯊鯊小幫手
 
-使用google app script 自建指令型Line bot
+使用google app script 與 firebase 製作 的 自建指令型Line bot
+
+取名來源：   
+![](./image/same.jpeg =250x)
+
+原本想使用某kea的鯊魚梗圖(隨便啦那張)作為取名靈感來源
+
+最後使用了微軟的AI幫我繪製了一個Line的大頭
+
+說明：
 
 鑑於自己想要試著寫看看類似指令機器人相關的內容
 
