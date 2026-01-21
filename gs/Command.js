@@ -30,6 +30,9 @@ Command._trySymbol = "'";
 // 文字抽選時用的分隔符號
 Command._randomSplitSymbol = [';', '；'];
 
+// dice
+Command.diceSplitKey = 'd'
+
 // 標準指令
 Command._systemCommand = [
     '增加', 'add', '新增', // 新增指令
@@ -53,7 +56,7 @@ Command._actionList = [
     {type: 'random', keyword: ['抽']},
     {type: 'memo', keyword: ['備忘', 'memo']}, // 效果與新增一樣
     {type: 'record', keyword: ['record', '記憶']},
-    {type: 'search', keyword: ['查詢', 'search', '指令', '可用']}
+    {type: 'search', keyword: ['查詢', 'search', '指令', '可用']},
 ]
 
 // 對照用的return type
@@ -70,11 +73,12 @@ Command.commandTypeList = {
     RECORD: 'record',
     ERROR: 'error',
     SEARCH: 'search',
+    DICE: 'dice',
 }
 Command.permissionTypeList = {
     global: 'global',
     group: 'group',
-    persona : 'persona',
+    persona: 'persona',
 }
 
 /**
@@ -83,12 +87,12 @@ Command.permissionTypeList = {
  */
 Command._permissionCheck = (text) => {
     const firstChar = text.trim()[0];
-    switch (true){
-        case Command._globalCommand.some((e)=> e === firstChar):
+    switch (true) {
+        case Command._globalCommand.some((e) => e === firstChar):
             return Command.permissionTypeList.global;
-        case Command._groupSymbolCommand.some((e)=> e === firstChar):
+        case Command._groupSymbolCommand.some((e) => e === firstChar):
             return Command.permissionTypeList.group;
-        case Command._personalSymbolCommand.some((e)=> e === firstChar):
+        case Command._personalSymbolCommand.some((e) => e === firstChar):
             return Command.permissionTypeList.persona;
     }
     return '';
@@ -127,7 +131,12 @@ Command._commandActionCheck = (text) => {
             }
         } else {
             // 完全沒有符合內容
-            return Command.commandTypeList.NOPE;
+            const checkDice = Dice.startDice(text.toLowerCase(), Command.diceSplitKey);
+            if (checkDice != null) {
+                return Command.commandTypeList.DICE;
+            } else {
+                return Command.commandTypeList.NOPE;
+            }
         }
     }
 }
@@ -214,7 +223,7 @@ Command.textHandle = (text) => {
         }
         case Command.commandTypeList.DEL: {
             const commands = text.split(commandReg);
-            switch (true){ // 格式 <action> <command>
+            switch (true) { // 格式 <action> <command>
                 case commands.length > 2:
                     action.type = Command.commandTypeList.NOPE;
                     action.msg = `指令中包含過多的分隔符號(${Command._spiltSymbol.join('或')})`;
@@ -298,6 +307,11 @@ Command.textHandle = (text) => {
                     action.type = Command.commandTypeList.NOPE
                     break
             }
+            break;
+        }
+        case Command.commandTypeList.DICE: {
+            action.type = Command.commandTypeList.DICE;
+            action.msg = Dice.startDice(text.toLowerCase(), Command.diceSplitKey);
             break;
         }
         case Command.commandTypeList.NOPE: {

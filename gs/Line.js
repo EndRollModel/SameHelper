@@ -144,16 +144,22 @@ Line._textMessageHandle = (event) => {
                 msgInfo.msg = `沒有此指令!`;
             }
             break;
+        case Command.commandTypeList.DICE: //
+            break;
         case Command.commandTypeList.RECORD: // 紀錄 目前先不寫功能
             break;
         case Command.commandTypeList.NOPE: // 如果msg內有東西 則回傳msg
             break;
     }
     if (msgInfo.msg !== '') {
-        if (msgInfo.msgType === 'image') {
-            return Line._replyMsg(event, Line._imageStyleBody(msgInfo.msg));
+        if(Object.hasOwn(event, 'replyToken')){
+            if (msgInfo.msgType === 'image') {
+                return Line._replyMsg(event, Line._imageStyleBody(msgInfo.msg));
+            } else {
+                return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg));
+            }
         } else {
-            return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg));
+            return ContentService.createTextOutput(JSON.stringify(msgInfo.msg)).setMimeType(ContentService.MimeType.JSON);
         }
     }
 }
@@ -185,7 +191,11 @@ Line._imageMessageHandle = (event) => {
     }
     Sheet.editTempStatus(checkTemp.index)
     if (msgInfo.msg !== '') {
-        return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg))
+        if (Object.hasOwn(event, "replyToken")) {
+            return Line._replyMsg(event, Line._textStyleBody(msgInfo.msg))
+        }else {
+            return ContentService.createTextOutput(JSON.stringify(msgInfo.msg)).setMimeType(ContentService.MimeType.JSON);
+        }
     }
 }
 
