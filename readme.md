@@ -1,3 +1,8 @@
+2026/09/08 更新：
+
+Firebase 現在強制要求 Database 綁定付款方式／信用卡並完成認證，因此之前透過免費方案 API 繞過限制的方法已經無法使用。 
+Firebase now requires a verified payment method (credit card) to be linked to the project before the Database can be used. As a result, the previous workaround that relied on the free-tier API to bypass this requirement is no longer working.
+
 ## 鯊鯊小幫手
 
 使用 google app script 與 firebase 製作
